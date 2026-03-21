@@ -1,0 +1,70 @@
+[project]
+name = "dynamic-dpo-v1"
+version = "0.1.0"
+description = "Dynamic Beta DPO Training Framework"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "accelerate>=1.12.0",
+    "alpaca-eval==0.6.2",
+    "datasets>=2.18.0,<4",
+    "hf-transfer>=0.1.9",
+    "matplotlib>=3.10.8",
+    "numpy>=1.24,<2.3",
+    "openai>=2.0.0",
+    "pandas>=2.2.0",
+    "peft>=0.18.0",
+    "pyyaml>=6.0.3",
+    "scipy>=1.16.3",
+    "setuptools>=65.5.0,<81",
+    "tabulate>=0.9.0",
+    "tokenizers>=0.22.2",
+    "torch>=2.0.0",
+    "tqdm>=4.67.1",
+    "transformers==4.57.3",
+    "trl>=0.26.2",
+    "vllm>=0.16.0; platform_system == 'Linux'",
+    "wandb>=0.23.1",
+]
+
+[project.optional-dependencies]
+ultra = [
+    "flash-attn>=2.8.3",
+]
+
+[dependency-groups]
+eval = [
+    "alpaca-eval==0.6.2",
+    "fschat>=0.2.36",
+    "vllm>=0.16.0; platform_system == 'Linux'",
+]
+
+[project.scripts]
+train-dpo = "src.cli:main_dpo"
+train-sft = "src.cli:main_sft"
+train-beta-dpo = "src.cli:main_beta_dpo"
+train-margin-dpo = "src.cli:main_margin_dpo"
+train-e-dpo = "src.cli:main_e_dpo"
+alpacaeval-infer = "src.cli:main_alpacaeval_infer"
+alpacaeval-eval = "src.cli:main_alpacaeval_eval"
+alpacaeval-batch = "eval.alpacaeval.batch_runner:main"
+arenahard-infer = "src.cli:main_arenahard_infer"
+arenahard-eval = "src.cli:main_arenahard_eval"
+arenahard-batch = "eval.arenahard.batch_runner:main"
+mtbench-infer = "src.cli:main_mtbench_infer"
+mtbench-eval = "src.cli:main_mtbench_eval"
+mtbench-batch = "eval.mtbench.batch_runner:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "eval*"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+package = true
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
