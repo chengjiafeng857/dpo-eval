@@ -18,7 +18,7 @@ import torch
 from huggingface_hub import hf_hub_download, snapshot_download
 from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 import yaml
-from eval.gpt_judge_HH.data_utils import (
+from gpt_judge_HH.data_utils import (
     load_hh_chosen_outputs,
     load_hh_eval_examples,
     render_hh_prompt,
@@ -618,7 +618,7 @@ def main() -> None:
     parser.add_argument(
         "--config",
         type=str,
-        default="eval/gpt_judge_HH/config_eval_HH.yaml",
+        default="gpt_judge_HH/config/single-turn/config_eval_HH.yaml",
         help="Path to HH evaluation config YAML.",
     )
     parser.add_argument(

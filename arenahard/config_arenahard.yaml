@@ -7,7 +7,7 @@ arenahard:
   backend: vllm
   use_custom_chat_template: true
   prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.jinja
-  output_dir: outputs/arenahard/ultrafeedback-llama3-8b-margin-dpo
+  output_dir: ../outputs/arenahard/ultrafeedback-llama3-8b-margin-dpo
   question_file: questions.jsonl
   judge_model: gpt-4-1106-preview
   baseline_model: gpt-4-0314

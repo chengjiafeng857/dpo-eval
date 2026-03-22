@@ -7,7 +7,7 @@ import copy
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.config.loader import load_yaml
+from config_utils import load_yaml
 
 from .alpacaeval_common import get_output_dir, sanitize_name
 from .alpacaeval_eval import run_alpacaeval_evaluation
@@ -73,7 +73,7 @@ def _build_model_config(
     alpacaeval_cfg["model_name_or_path"] = model_name_or_path
     alpacaeval_cfg["pretty_name"] = pretty_name
     alpacaeval_cfg["output_dir"] = str(
-        Path("../../outputs/alpacaeval") / sanitize_name(pretty_name)
+        Path("../outputs/alpacaeval") / sanitize_name(pretty_name)
     )
 
     _apply_model_family_defaults(
@@ -215,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="eval/alpacaeval/config_alpacaeval_batch.yaml",
+        default="alpacaeval/config_alpacaeval_batch.yaml",
     )
     parser.add_argument("--inference-only", action="store_true")
     parser.add_argument("--eval-only", action="store_true")

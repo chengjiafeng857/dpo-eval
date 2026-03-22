@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import argparse
 import shlex
 import subprocess
 from pathlib import Path
 from typing import Any, Dict
 
+from config_utils import load_yaml
 from . import __file__ as _PACKAGE_FILE
-from eval.benchmark_common import (
+from benchmark_common import (
     format_command,
     get_block_config,
     get_model_name_or_path,
@@ -106,3 +108,29 @@ def run_mtbench_evaluation(
 
     print(f"[MTBench] results_dir={results_dir}")
     return results_dir
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run MT-Bench evaluation")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="mtbench/config_mtbench.yaml",
+    )
+    parser.add_argument(
+        "--model-answer",
+        type=str,
+        default=None,
+    )
+    args = parser.parse_args(argv)
+
+    config = load_yaml(args.config)
+    run_mtbench_evaluation(
+        config,
+        model_answer_path=args.model_answer,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

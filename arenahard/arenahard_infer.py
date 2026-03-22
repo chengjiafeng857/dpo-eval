@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import argparse
 import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, List
 
+from config_utils import load_yaml
 from . import __file__ as _PACKAGE_FILE
-from eval.benchmark_common import (
+from benchmark_common import (
     get_block_config,
     get_generation_config,
     get_model_name_or_path,
@@ -21,7 +23,7 @@ from eval.benchmark_common import (
     write_json,
     write_jsonl,
 )
-from eval.model_generation import (
+from model_generation import (
     generate_with_transformers,
     generate_with_vllm,
     load_render_tokenizer,
@@ -200,3 +202,21 @@ def run_arenahard_inference(config: Dict[str, Any]) -> Path:
     print(f"[ArenaHard] wrote_model_answer={model_answer_path}")
     print(f"[ArenaHard] wrote_metadata={metadata_path}")
     return model_answer_path
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run Arena-Hard inference")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="arenahard/config_arenahard.yaml",
+    )
+    args = parser.parse_args(argv)
+
+    config = load_yaml(args.config)
+    run_arenahard_inference(config)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

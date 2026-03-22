@@ -7,9 +7,9 @@ import copy
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.config.loader import load_yaml
+from config_utils import load_yaml
 
-from eval.benchmark_common import get_output_dir, sanitize_name
+from benchmark_common import get_output_dir, sanitize_name
 
 from .arenahard_eval import run_arenahard_evaluation
 from .arenahard_infer import run_arenahard_inference
@@ -74,7 +74,7 @@ def _build_model_config(
     arenahard_cfg["model_name_or_path"] = model_name_or_path
     arenahard_cfg["pretty_name"] = pretty_name
     arenahard_cfg["output_dir"] = str(
-        Path("../../outputs/arenahard") / sanitize_name(pretty_name)
+        Path("../outputs/arenahard") / sanitize_name(pretty_name)
     )
 
     _apply_model_family_defaults(
@@ -206,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="eval/arenahard/config_arenahard_batch.yaml",
+        default="arenahard/config_arenahard_batch.yaml",
     )
     parser.add_argument("--inference-only", action="store_true")
     parser.add_argument("--eval-only", action="store_true")

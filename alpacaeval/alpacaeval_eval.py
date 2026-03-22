@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import shlex
 import subprocess
 import sys
@@ -11,7 +12,7 @@ from typing import Any, Dict
 
 import yaml
 
-from src.config.loader import resolve_torch_dtype
+from config_utils import load_yaml, resolve_torch_dtype
 from .alpacaeval_common import (
     DEFAULT_ALPACA_EVAL_ANNOTATOR,
     get_alpacaeval_config,
@@ -190,3 +191,31 @@ def run_alpacaeval_evaluation(
     subprocess.run(command, check=True)
     print(f"[AlpacaEval] results_dir={results_dir}")
     return results_dir
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run AlpacaEval evaluation")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="alpacaeval/config_alpacaeval.yaml",
+    )
+    parser.add_argument(
+        "--model-outputs",
+        type=str,
+        default=None,
+    )
+    parser.add_argument("--use-model-configs", action="store_true")
+    args = parser.parse_args(argv)
+
+    config = load_yaml(args.config)
+    run_alpacaeval_evaluation(
+        config,
+        model_outputs_path=args.model_outputs,
+        use_model_configs=args.use_model_configs,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

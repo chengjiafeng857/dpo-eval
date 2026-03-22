@@ -7,9 +7,9 @@ import copy
 from pathlib import Path
 from typing import Any, Dict, List
 
-from src.config.loader import load_yaml
+from config_utils import load_yaml
 
-from eval.benchmark_common import get_output_dir, sanitize_name
+from benchmark_common import get_output_dir, sanitize_name
 
 from .mtbench_eval import run_mtbench_evaluation
 from .mtbench_infer import run_mtbench_inference
@@ -74,7 +74,7 @@ def _build_model_config(
     mtbench_cfg["model_name_or_path"] = model_name_or_path
     mtbench_cfg["pretty_name"] = pretty_name
     mtbench_cfg["output_dir"] = str(
-        Path("../../outputs/mtbench") / sanitize_name(pretty_name)
+        Path("../outputs/mtbench") / sanitize_name(pretty_name)
     )
 
     _apply_model_family_defaults(
@@ -206,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="eval/mtbench/config_mtbench_batch.yaml",
+        default="mtbench/config_mtbench_batch.yaml",
     )
     parser.add_argument("--inference-only", action="store_true")
     parser.add_argument("--eval-only", action="store_true")

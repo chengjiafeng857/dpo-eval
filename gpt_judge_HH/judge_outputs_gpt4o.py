@@ -274,7 +274,7 @@ def main() -> None:
     parser.add_argument(
         "--config",
         type=str,
-        default="eval/gpt_judge_HH/config_eval_HH.yaml",
+        default="gpt_judge_HH/config/single-turn/config_eval_HH.yaml",
         help="Path to evaluation config YAML.",
     )
     parser.add_argument(

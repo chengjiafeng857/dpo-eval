@@ -1,10 +1,10 @@
 # Eval Pipeline
 
-This repo keeps benchmark wrappers under `eval/`:
+This repo keeps benchmark wrappers at the repo root:
 
-- `eval/alpacaeval/`: AlpacaEval local generation plus `alpaca-eval` scoring.
-- `eval/arenahard/`: Arena-Hard local generation plus external judge wrapper.
-- `eval/mtbench/`: MT-Bench local generation plus FastChat judge wrapper.
+- `alpacaeval/`: AlpacaEval local generation plus `alpaca-eval` scoring.
+- `arenahard/`: Arena-Hard local generation plus external judge wrapper.
+- `mtbench/`: MT-Bench local generation plus FastChat judge wrapper.
 
 Installed entrypoints:
 
@@ -14,27 +14,27 @@ Installed entrypoints:
 
 ## Folder layout
 
-- `eval/alpacaeval/alpacaeval_infer.py`: single-model inference pipeline.
-- `eval/alpacaeval/alpacaeval_eval.py`: evaluation wrapper around
+- `alpacaeval/alpacaeval_infer.py`: single-model inference pipeline.
+- `alpacaeval/alpacaeval_eval.py`: evaluation wrapper around
   `alpaca-eval`.
-- `eval/alpacaeval/batch_runner.py`: config-driven batch runner for multiple
+- `alpacaeval/batch_runner.py`: config-driven batch runner for multiple
   models.
-- `eval/alpacaeval/alpacaeval_common.py`: shared config, path, template, and
+- `alpacaeval/alpacaeval_common.py`: shared config, path, template, and
   JSON helpers.
-- `eval/alpacaeval/config_alpacaeval.yaml`: single-model example config.
-- `eval/alpacaeval/config_alpacaeval_batch.yaml`: batch config for the repo's
+- `alpacaeval/config_alpacaeval.yaml`: single-model example config.
+- `alpacaeval/config_alpacaeval_batch.yaml`: batch config for the repo's
   UltraFeedback Qwen3 and Llama3 models.
-- `eval/alpacaeval/templates/`: custom prompt templates used when
+- `alpacaeval/templates/`: custom prompt templates used when
   `use_custom_chat_template: true`.
-- `eval/alpacaeval/configs/`: checked-in AlpacaEval model-config YAMLs for the
+- `alpacaeval/configs/`: checked-in AlpacaEval model-config YAMLs for the
   repo's Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
-- `eval/arenahard/`: Arena-Hard configs, templates, inference, evaluation, and
+- `arenahard/`: Arena-Hard configs, templates, inference, evaluation, and
   batch orchestration.
-- `eval/mtbench/`: MT-Bench configs, templates, inference, evaluation, and
+- `mtbench/`: MT-Bench configs, templates, inference, evaluation, and
   batch orchestration.
-- `eval/benchmark_common.py`: shared path, config, JSONL, and command helpers
+- `benchmark_common.py`: shared path, config, JSONL, and command helpers
   for benchmark wrappers.
-- `eval/model_generation.py`: shared tokenizer rendering and local generation
+- `model_generation.py`: shared tokenizer rendering and local generation
   helpers for `transformers` and `vllm`.
 
 ## Recommended usage
@@ -42,50 +42,50 @@ Installed entrypoints:
 Single-model flow:
 
 ```bash
-uv run alpacaeval-infer --config eval/alpacaeval/config_alpacaeval.yaml
-uv run alpacaeval-eval --config eval/alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
 ```
 
 Batch flow:
 
 ```bash
-uv run alpacaeval-batch --config eval/alpacaeval/config_alpacaeval_batch.yaml
+uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
 ```
 
 Useful variants:
 
 ```bash
 uv run alpacaeval-eval \
-  --config eval/alpacaeval/config_alpacaeval.yaml \
+  --config alpacaeval/config_alpacaeval.yaml \
   --model-outputs /absolute/path/to/model_outputs.json
 ```
 
 ```bash
 uv run alpacaeval-eval \
-  --config eval/alpacaeval/config_alpacaeval.yaml \
+  --config alpacaeval/config_alpacaeval.yaml \
   --use-model-configs
 ```
 
 ```bash
-uv run alpacaeval-batch --config eval/alpacaeval/config_alpacaeval_batch.yaml --inference-only
-uv run alpacaeval-batch --config eval/alpacaeval/config_alpacaeval_batch.yaml --eval-only
-uv run alpacaeval-batch --config eval/alpacaeval/config_alpacaeval_batch.yaml --use-model-configs
+uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --inference-only
+uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --eval-only
+uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --use-model-configs
 ```
 
 Arena-Hard:
 
 ```bash
-uv run arenahard-infer --config eval/arenahard/config_arenahard.yaml
-uv run arenahard-eval --config eval/arenahard/config_arenahard.yaml
-uv run arenahard-batch --config eval/arenahard/config_arenahard_batch.yaml
+uv run arenahard-infer --config arenahard/config_arenahard.yaml
+uv run arenahard-eval --config arenahard/config_arenahard.yaml
+uv run arenahard-batch --config arenahard/config_arenahard_batch.yaml
 ```
 
 MT-Bench:
 
 ```bash
-uv run mtbench-infer --config eval/mtbench/config_mtbench.yaml
-uv run mtbench-eval --config eval/mtbench/config_mtbench.yaml
-uv run mtbench-batch --config eval/mtbench/config_mtbench_batch.yaml
+uv run mtbench-infer --config mtbench/config_mtbench.yaml
+uv run mtbench-eval --config mtbench/config_mtbench.yaml
+uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
 ```
 
 ## How the pipeline works
@@ -109,8 +109,7 @@ There is also a model-config path:
 
 - Python environment managed with `uv`.
 - Project dependencies installed.
-- If you want the eval-specific uv dependency group, install it with
-  `uv sync --group eval`.
+- Install dependencies with `uv sync`.
 - Access to the target model in `policy_name` or
   `alpacaeval.model_name_or_path`.
 - Access to the AlpacaEval dataset from Hugging Face.
@@ -133,7 +132,7 @@ For Llama 3, apply chat templating exactly once.
 Inference has two mutually exclusive prompt paths:
 
 - `alpacaeval.use_custom_chat_template: true`: the repo formats prompts with a
-  model-specific file template in `eval/alpacaeval/templates/`.
+  model-specific file template in `alpacaeval/templates/`.
 - `alpacaeval.use_custom_chat_template: false`: the repo calls the tokenizer's
   built-in `apply_chat_template(...)`.
 
@@ -154,7 +153,7 @@ Llama 3 template notes:
 
 ## Batch config defaults
 
-`eval/alpacaeval/config_alpacaeval_batch.yaml` is set up for the repo's eight
+`alpacaeval/config_alpacaeval_batch.yaml` is set up for the repo's eight
 Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
 
 - Backend defaults to `vllm`.
@@ -175,7 +174,7 @@ Qwen3/Llama3 family defaults as AlpacaEval:
 ## Key config fields
 
 The pipeline reads the `alpacaeval` block in
-`eval/alpacaeval/config_alpacaeval.yaml`.
+`alpacaeval/config_alpacaeval.yaml`.
 
 - `model_name_or_path`: model to load. Falls back to top-level `policy_name` if
   omitted.

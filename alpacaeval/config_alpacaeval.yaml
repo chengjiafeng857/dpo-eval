@@ -8,7 +8,7 @@ alpacaeval:
   simpo_compat: false
   use_custom_chat_template: true
   prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.txt
-  output_dir: outputs/alpacaeval/ultrafeedback-llama3-8b-margin-dpo
+  output_dir: ../outputs/alpacaeval/ultrafeedback-llama3-8b-margin-dpo
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval
   dataset_split: eval

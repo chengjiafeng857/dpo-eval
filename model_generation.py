@@ -12,9 +12,9 @@ import torch
 from huggingface_hub import hf_hub_download, snapshot_download
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.config.loader import resolve_torch_dtype
+from config_utils import resolve_torch_dtype
 
-from .benchmark_common import (
+from benchmark_common import (
     get_block_config,
     get_model_name_or_path,
     load_prompt_template,

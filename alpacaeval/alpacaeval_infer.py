@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import shutil
@@ -13,7 +14,7 @@ from datasets import load_dataset
 from huggingface_hub import hf_hub_download, snapshot_download
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.config.loader import resolve_torch_dtype
+from config_utils import load_yaml, resolve_torch_dtype
 from .alpacaeval_common import (
     DEFAULT_ALPACA_EVAL_CONFIG,
     DEFAULT_ALPACA_EVAL_DATASET,
@@ -423,3 +424,21 @@ def run_alpacaeval_inference(config: Dict[str, Any]) -> Path:
     print(f"[AlpacaEval] wrote_model_outputs={model_outputs_path}")
     print(f"[AlpacaEval] wrote_metadata={metadata_path}")
     return model_outputs_path
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run AlpacaEval inference")
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="alpacaeval/config_alpacaeval.yaml",
+    )
+    args = parser.parse_args(argv)
+
+    config = load_yaml(args.config)
+    run_alpacaeval_inference(config)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
