@@ -4,12 +4,14 @@ This repo keeps benchmark wrappers at the repo root:
 
 - `alpacaeval/`: AlpacaEval local generation plus `alpaca-eval` scoring.
 - `arenahard/`: Arena-Hard local generation plus external judge wrapper.
+- `gpt_judge_HH/`: Anthropic HH generation plus GPT-4o judging.
 - `mtbench/`: MT-Bench local generation plus FastChat judge wrapper.
 
 Installed entrypoints:
 
 - `alpacaeval-infer`, `alpacaeval-eval`, `alpacaeval-batch`
 - `arenahard-infer`, `arenahard-eval`, `arenahard-batch`
+- `hh-generate`, `hh-judge`
 - `mtbench-infer`, `mtbench-eval`, `mtbench-batch`
 
 ## Folder layout
@@ -30,6 +32,13 @@ Installed entrypoints:
   repo's Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
 - `arenahard/`: Arena-Hard configs, templates, inference, evaluation, and
   batch orchestration.
+- `gpt_judge_HH/generate_hh_output.py`: HH generation and chosen-response
+  export entrypoint.
+- `gpt_judge_HH/judge_outputs_gpt4o.py`: GPT-4o pairwise or three-way judge.
+- `gpt_judge_HH/data_utils.py`: HH transcript parsing, prompt extraction, and
+  chosen-output export helpers.
+- `gpt_judge_HH/config/`: checked-in helpful-base and harmless-base single-turn
+  and multi-turn configs.
 - `mtbench/`: MT-Bench configs, templates, inference, evaluation, and
   batch orchestration.
 - `benchmark_common.py`: shared path, config, JSONL, and command helpers
@@ -37,22 +46,93 @@ Installed entrypoints:
 - `model_generation.py`: shared tokenizer rendering and local generation
   helpers for `transformers` and `vllm`.
 
-## Recommended usage
+## Quick start
 
-Single-model flow:
+Install dependencies first:
+
+```bash
+uv sync
+```
+
+For judge-backed stages, export your OpenAI key:
+
+```bash
+export OPENAI_API_KEY=...
+```
+
+### AlpacaEval full pipeline
+
+Run local generation first, then score the saved outputs with `alpaca-eval`:
 
 ```bash
 uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
 uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
 ```
 
-Batch flow:
+Batch mode runs the same two stages for every model in the batch config:
 
 ```bash
 uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
 ```
 
-Useful variants:
+### HH GPT-judge full pipeline
+
+Pick one HH config first. Common examples:
+
+- `gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml`
+- `gpt_judge_HH/config/harmless_base/multi-turn/config_eval_HH_multiturn.yaml`
+- `gpt_judge_HH/config/helpful_base/single-turn/config_eval_HH.yaml`
+- `gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml`
+
+Then run generation once per model output you want in the comparison, export
+the HH chosen baseline, and finally judge:
+
+```bash
+uv run hh-generate --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --model_key sft --output_key sft
+uv run hh-generate --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --model_key beta_dpo --output_key beta_dpo
+uv run hh-generate --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --model_key margin_dpo --output_key margin_dpo
+uv run hh-generate --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --model_key e_dpo --output_key e_dpo
+uv run hh-generate --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --output_key chosen --extract_chosen
+uv run hh-judge --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --resume
+```
+
+The same command pattern works for helpful-base and for multi-turn. Swap only
+the config path.
+
+## AlpacaEval
+
+### Full pipeline
+
+The normal AlpacaEval workflow is two explicit stages:
+
+1. `alpacaeval-infer` loads the AlpacaEval dataset, renders prompts, runs local
+   generation with either `transformers` or `vllm`, and writes
+   `model_outputs.json` plus `metadata.json`.
+2. `alpacaeval-eval` reads `model_outputs.json`, calls `alpaca-eval`, and
+   writes a `results/` directory under the configured output directory.
+
+The simplest end-to-end run is:
+
+```bash
+uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
+```
+
+### Separate stages
+
+Inference only:
+
+```bash
+uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+```
+
+Evaluation only, using the outputs written by the earlier inference step:
+
+```bash
+uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
+```
+
+Evaluation only, but against an arbitrary saved `model_outputs.json` file:
 
 ```bash
 uv run alpacaeval-eval \
@@ -60,17 +140,236 @@ uv run alpacaeval-eval \
   --model-outputs /absolute/path/to/model_outputs.json
 ```
 
+Evaluation with AlpacaEval model-config generation instead of saved outputs:
+
 ```bash
 uv run alpacaeval-eval \
   --config alpacaeval/config_alpacaeval.yaml \
   --use-model-configs
 ```
 
+Batch mode, full pipeline:
+
+```bash
+uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
+```
+
+Batch mode, separate stages:
+
 ```bash
 uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --inference-only
 uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --eval-only
 uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --use-model-configs
 ```
+
+### What each stage reads and writes
+
+`alpacaeval-infer` reads:
+
+- `alpacaeval/config_alpacaeval.yaml`
+- the configured model in `alpacaeval.model_name_or_path` or top-level
+  `policy_name`
+- the configured dataset, defaulting to `tatsu-lab/alpaca_eval`
+
+`alpacaeval-infer` writes into `alpacaeval.output_dir`:
+
+- `model_outputs.json`
+- `metadata.json`
+
+`alpacaeval-eval` reads:
+
+- the same config file
+- `model_outputs.json`, unless `--model-outputs` or `--use-model-configs` is
+  used
+
+`alpacaeval-eval` writes:
+
+- `results/`
+- `alpacaeval_model_config.yaml` when `--use-model-configs` is used
+
+### Common AlpacaEval workflow notes
+
+- Relative paths in AlpacaEval configs are resolved relative to the config
+  file, not the shell working directory.
+- `alpacaeval-eval` requires `alpaca-eval` in the current environment and
+  usually needs `OPENAI_API_KEY` because the default annotator config is
+  OpenAI-backed.
+- `alpacaeval-batch` expands a base config into one per-model run plan, applies
+  model-family defaults, and can skip existing outputs/results when
+  `skip_existing: true`.
+
+## HH GPT Judge
+
+### What the HH pipeline does
+
+The HH pipeline is also multi-stage, but unlike AlpacaEval there is no single
+batch wrapper. You run each stage directly:
+
+1. Generate model outputs with `hh-generate`.
+2. Export the dataset's chosen response with `hh-generate --extract_chosen`.
+3. Compare two or three output files with `hh-judge`, which uses GPT-4o and
+   writes per-example judgments plus a summary.
+
+### Choose the right config
+
+Use one config that matches both the dataset slice and prompt shape:
+
+- helpful-base single-turn:
+  `gpt_judge_HH/config/helpful_base/single-turn/config_eval_HH.yaml`
+- helpful-base multi-turn:
+  `gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml`
+- harmless-base single-turn:
+  `gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml`
+- harmless-base multi-turn:
+  `gpt_judge_HH/config/harmless_base/multi-turn/config_eval_HH_multiturn.yaml`
+
+The HH config controls:
+
+- `dataset.repo_id`, `dataset.data_dir`, `dataset.split`,
+  `dataset.single_turn_only`, `dataset.max_instances`
+- `models.<key>`: model ids or local paths for `sft`, `beta_dpo`,
+  `margin_dpo`, `e_dpo`, and any other named candidates you add
+- `generation.model_key`: which entry under `models` to load
+- `generation.output_key`: which entry under `inputs` to write
+- `inputs.<key>`: JSON paths for generated outputs and chosen exports
+- `judge.candidate_keys`: which outputs the judge compares
+- `output.results_file` and `output.summary_file`: judge artifacts
+- `gpt4_oracle.*`: OpenAI model, prompt template, retry/backoff, and token
+  budget
+
+### Full HH pipeline
+
+Run one generation command per model output:
+
+```bash
+uv run hh-generate --config gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml --model_key sft --output_key sft
+uv run hh-generate --config gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml --model_key beta_dpo --output_key beta_dpo
+uv run hh-generate --config gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml --model_key margin_dpo --output_key margin_dpo
+uv run hh-generate --config gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml --model_key e_dpo --output_key e_dpo
+```
+
+Export the HH chosen reference:
+
+```bash
+uv run hh-generate --config gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml --output_key chosen --extract_chosen
+```
+
+Run the GPT judge:
+
+```bash
+uv run hh-judge --config gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_multiturn.yaml --resume
+```
+
+`judge.candidate_keys` decides what `hh-judge` compares. The checked-in configs
+mostly use pairwise chosen-vs-model comparisons. If you want a different pair,
+either:
+
+- use one of the checked-in `chosen_vs_*.yaml` configs, or
+- edit `judge.candidate_keys` in the base config, or
+- override file paths on the CLI with `--sft`, `--beta_dpo`, `--margin_dpo`,
+  `--chosen`, and related flags
+
+### Separate HH stages
+
+Generate just one model's outputs:
+
+```bash
+uv run hh-generate \
+  --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml \
+  --model_key beta_dpo \
+  --output_key beta_dpo
+```
+
+Export chosen responses only:
+
+```bash
+uv run hh-generate \
+  --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml \
+  --output_key chosen \
+  --extract_chosen
+```
+
+Judge only, using whatever output files are already present in the config:
+
+```bash
+uv run hh-judge --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml --resume
+```
+
+Judge only, but limit to a small smoke-test subset:
+
+```bash
+uv run hh-judge \
+  --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml \
+  --max_examples 20
+```
+
+Judge only, but override one or more candidate files at runtime:
+
+```bash
+uv run hh-judge \
+  --config gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH.yaml \
+  --beta_dpo /absolute/path/to/beta_dpo_output_hh.json \
+  --chosen /absolute/path/to/chosen_output_hh.json
+```
+
+### What HH stages read and write
+
+`hh-generate` reads:
+
+- one HH config YAML
+- the configured model from `models.<model_key>`, unless `--extract_chosen` is
+  used
+- the Anthropic HH dataset split selected by `dataset.repo_id`,
+  `dataset.data_dir`, `dataset.split`, and `dataset.single_turn_only`
+
+`hh-generate` writes one JSON array to `inputs.<output_key>` or `--output_file`.
+
+Generated model-output rows contain:
+
+- `instruction`
+- `raw_instruction`
+- `output`
+- `generator`
+
+Chosen-export rows contain:
+
+- `instruction`
+- `output`
+- `generator`
+
+`hh-judge` reads:
+
+- the output JSON files named by `judge.candidate_keys`
+- `OPENAI_API_KEY`
+
+`hh-judge` writes:
+
+- `output.results_file`: JSONL with one row per judged instruction
+- `output.summary_file`: JSON summary with totals, counts, and win rates
+
+Each results row includes:
+
+- `instruction`
+- `comparison`
+- `winner`
+- `winner_key`
+- `labels`
+- `model`
+- `raw_response`
+- `usage`
+
+### Common HH workflow notes
+
+- HH config paths are used as written. They are not resolved relative to the
+  config file, so run from the repo root or use absolute paths in the YAML.
+- `generation.model_key` picks the model to load; `generation.output_key`
+  selects where its JSON is written.
+- `--extract_chosen` skips model loading entirely and exports the dataset's
+  chosen response instead.
+- `hh-judge --resume` skips instructions already present in the results file,
+  which is useful for long GPT-judge runs.
+- The judge only compares the intersection of instructions present in all
+  selected candidate files.
 
 Arena-Hard:
 
@@ -88,23 +387,6 @@ uv run mtbench-eval --config mtbench/config_mtbench.yaml
 uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
 ```
 
-## How the pipeline works
-
-The default single-model workflow is two-stage:
-
-1. `alpacaeval-infer` loads `tatsu-lab/alpaca_eval`, renders prompts, runs
-   generation with either `transformers` or `vllm`, and writes
-   `model_outputs.json` plus `metadata.json`.
-2. `alpacaeval-eval` invokes `alpaca-eval` on those saved outputs and writes a
-   `results/` directory.
-
-There is also a model-config path:
-
-- Set `alpacaeval.evaluation_mode: model_configs` or pass
-  `--use-model-configs`.
-- In that mode, the repo writes `alpacaeval_model_config.yaml` and asks
-  `alpaca-eval` to generate during evaluation.
-
 ## Prerequisites
 
 - Python environment managed with `uv`.
@@ -117,6 +399,8 @@ There is also a model-config path:
   dependency group for Linux environments.
 - The default annotator config is OpenAI-backed, so `alpacaeval-eval`
   typically needs `OPENAI_API_KEY`.
+- HH generation requires access to the Anthropic HH dataset on Hugging Face.
+- HH judging requires `OPENAI_API_KEY`.
 - Arena-Hard and MT-Bench require benchmark question files. The checked-in base
   configs default to `questions.jsonl` inside each benchmark package, so update
   `arenahard.question_file` and `mtbench.question_file` to point at the real
@@ -210,6 +494,27 @@ blocks:
   `mtbench.reference_answer_file`, `mtbench.question_file`, and
   `mtbench.judge_model` control MT-Bench judge invocation.
 
+HH judging uses a different config layout:
+
+- `dataset.*` selects the HH dataset repo, split, data directory
+  (`helpful-base` or `harmless-base`), and whether prompts are single-turn or
+  multi-turn.
+- `models.<key>` names the local or Hugging Face checkpoints for candidate
+  systems.
+- `generation.model_key` chooses which model entry to load for a generation
+  run.
+- `generation.output_key` chooses which `inputs.<key>` path receives the saved
+  JSON.
+- `generation.extract_chosen` switches generation into chosen-response export
+  mode.
+- `inputs.<key>` stores the per-candidate output JSON paths consumed later by
+  `hh-judge`.
+- `judge.candidate_keys` selects the two or three candidates compared in a
+  given judge run.
+- `gpt4_oracle.*` controls judge model name, prompts, retries, and token
+  limits.
+- `output.results_file` and `output.summary_file` store judge artifacts.
+
 ## Outputs
 
 The pipeline writes into `alpacaeval.output_dir`.
@@ -231,8 +536,17 @@ Arena-Hard and MT-Bench write benchmark-native answer payloads:
 - `metadata.json`: local generation metadata.
 - `results/`: judge outputs from the configured external command.
 
-Relative paths in the config are resolved relative to the config file, not the
-current shell directory.
+HH writes simpler JSON artifacts:
+
+- `inputs.<key>`: JSON array of generated responses or chosen-response exports.
+- `output.results_file`: JSONL with one row per GPT-judge decision.
+- `output.summary_file`: summary JSON with totals, counts, and win rates.
+
+Relative path handling differs by pipeline:
+
+- AlpacaEval resolves relative paths relative to the config file.
+- HH uses paths exactly as written, so relative HH paths are interpreted from
+  the shell working directory.
 
 ## Tests
 
