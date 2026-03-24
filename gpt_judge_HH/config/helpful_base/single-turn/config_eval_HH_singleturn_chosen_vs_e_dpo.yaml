@@ -18,7 +18,7 @@ generation:
   model_key: "e_dpo"
   output_key: "e_dpo"
   backend: "vllm"
-  use_custom_chat_template: false
+  use_custom_chat_template: true
   prompt_template: "templates/llama3.txt"
   max_new_tokens: 128
   batch_size: 8

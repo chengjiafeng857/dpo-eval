@@ -12,7 +12,7 @@ models:
   sft: "W-61/hh-harmless-base-llama3-8b-sft"
   beta_dpo: "W-61/hh-harmless-base-llama3-8b-beta-dpo"
   margin_dpo: "W-61/hh-harmless-base-llama3-8b-margin-dpo"
-  e_dpo: "jackf857/Llama-8b-sft-hh-harmless-base-e-dpo"
+  e_dpo: "jackf857/llama3-harmless-base-hh-edpo"
 
 generation:
   model_key: "e_dpo"
@@ -40,8 +40,8 @@ inputs:
   sft: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/sft_output_hh.json"
   beta_dpo: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/beta_dpo_output_hh.json"
   margin_dpo: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/margin_dpo_output_hh.json"
-  e_dpo: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/e_dpo_output_hh_single.json"
-  chosen: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/chosen_output_hh.json"
+  e_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/e_dpo_output_harmless_single.json"
+  chosen: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_output_hh.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
