@@ -7,7 +7,7 @@ alpacaeval:
   backend: vllm
   simpo_compat: false
   use_custom_chat_template: true
-  prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+  prompt_template: <fix this path>
   output_dir: ../outputs/alpacaeval/llama-3-8b-base-beta-dpo-4gpu-first-real-run
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval
@@ -15,18 +15,15 @@ alpacaeval:
   annotators_config: weighted_alpaca_eval_gpt4_turbo
   evaluation_mode: outputs
   generation:
-    batch_size: 128
-    do_sample: true
-    max_new_tokens: 4096
+    batch_size: 16
+    do_sample: false
+    max_new_tokens: 1024
     stop_token_ids:
       - 128001
       - 128009
-    temperature: 0.9
+    temperature: 0.0
     top_p: 1.0
   vllm:
     tensor_parallel_size: 1
     trust_remote_code: false
     gpu_memory_utilization: 0.9
-  transformers:
-    device: cuda
-    trust_remote_code: false

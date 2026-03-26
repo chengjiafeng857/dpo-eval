@@ -12,6 +12,7 @@ alpacaeval:
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval
   dataset_split: eval
+  dataset_trust_remote_code: true
   annotators_config: weighted_alpaca_eval_gpt4_turbo
   evaluation_mode: outputs
   generation:
