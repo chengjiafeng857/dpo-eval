@@ -64,6 +64,16 @@ def _alpacaeval_command(config: Dict[str, Any]) -> list[str]:
     raise ValueError("alpacaeval.command must be a string or list.")
 
 
+def _resolve_annotators_config(config: Dict[str, Any], annotators_config: Any) -> Any:
+    if not isinstance(annotators_config, str):
+        return annotators_config
+
+    resolved = resolve_path(config, annotators_config)
+    if resolved.exists():
+        return str(resolved)
+    return annotators_config
+
+
 def _build_runtime_model_config(config: Dict[str, Any]) -> Path:
     if not use_custom_chat_template(config):
         raise ValueError(
@@ -144,6 +154,7 @@ def run_alpacaeval_evaluation(
     annotators_config = str(
         alpacaeval_cfg.get("annotators_config", DEFAULT_ALPACA_EVAL_ANNOTATOR)
     )
+    annotators_config = _resolve_annotators_config(config, annotators_config)
 
     command = _alpacaeval_command(config)
     if use_model_configs or str(alpacaeval_cfg.get("evaluation_mode", "outputs")).lower() == "model_configs":

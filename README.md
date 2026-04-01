@@ -469,8 +469,9 @@ The pipeline reads the `alpacaeval` block in
   to `tatsu-lab/alpaca_eval`, `alpaca_eval`, `eval`.
 - `dataset_trust_remote_code`: whether `alpacaeval-infer` should auto-accept
   Hugging Face dataset remote code. Defaults to `true`.
-- `annotators_config`: AlpacaEval annotator setting passed through to
-  `alpaca-eval`.
+- `annotators_config`: AlpacaEval annotator config name or local path. This
+  repo defaults to a checked-in weighted judge config that uses `gpt-4.1`
+  instead of AlpacaEval's deprecated `gpt-4-1106-preview`.
 - `evaluation_mode`: `outputs` or `model_configs`.
 - `use_custom_chat_template`: when `true`, prompts come from `prompt_template`;
   when `false`, the tokenizer's built-in chat template is used.

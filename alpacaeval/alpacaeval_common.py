@@ -12,7 +12,7 @@ from typing import Any, Dict
 DEFAULT_ALPACA_EVAL_DATASET = "tatsu-lab/alpaca_eval"
 DEFAULT_ALPACA_EVAL_CONFIG = "alpaca_eval"
 DEFAULT_ALPACA_EVAL_SPLIT = "eval"
-DEFAULT_ALPACA_EVAL_ANNOTATOR = "weighted_alpaca_eval_gpt4_turbo"
+DEFAULT_ALPACA_EVAL_ANNOTATOR = "evaluators_configs/weighted_alpaca_eval_gpt4_1"
 
 
 def get_alpacaeval_config(config: Dict[str, Any]) -> Dict[str, Any]:

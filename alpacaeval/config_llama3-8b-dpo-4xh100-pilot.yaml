@@ -11,7 +11,7 @@ alpacaeval:
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval
   dataset_split: eval
-  annotators_config: weighted_alpaca_eval_gpt4_turbo
+  annotators_config: evaluators_configs/weighted_alpaca_eval_gpt4_1
   evaluation_mode: outputs
   generation:
     batch_size: 128
