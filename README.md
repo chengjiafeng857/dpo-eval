@@ -467,6 +467,8 @@ The pipeline reads the `alpacaeval` block in
 - `output_dir`: where outputs, metadata, and results are written.
 - `dataset_name`, `dataset_config`, `dataset_split`: dataset source, defaulting
   to `tatsu-lab/alpaca_eval`, `alpaca_eval`, `eval`.
+- `dataset_trust_remote_code`: whether `alpacaeval-infer` should auto-accept
+  Hugging Face dataset remote code. Defaults to `true`.
 - `annotators_config`: AlpacaEval annotator setting passed through to
   `alpaca-eval`.
 - `evaluation_mode`: `outputs` or `model_configs`.

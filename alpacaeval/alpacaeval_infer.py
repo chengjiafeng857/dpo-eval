@@ -326,9 +326,16 @@ def _load_alpacaeval_rows(
     dataset_name: str,
     dataset_config: str,
     dataset_split: str,
+    *,
+    trust_remote_code: bool = True,
 ) -> list[Dict[str, Any]]:
     try:
-        dataset = load_dataset(dataset_name, name=dataset_config, split=dataset_split)
+        dataset = load_dataset(
+            dataset_name,
+            name=dataset_config,
+            split=dataset_split,
+            trust_remote_code=trust_remote_code,
+        )
         return [dict(row) for row in dataset]
     except RuntimeError as exc:
         if "Dataset scripts are no longer supported" not in str(exc):
@@ -358,10 +365,16 @@ def run_alpacaeval_inference(config: Dict[str, Any]) -> Path:
     dataset_name = str(alpacaeval_cfg.get("dataset_name", DEFAULT_ALPACA_EVAL_DATASET))
     dataset_config = str(alpacaeval_cfg.get("dataset_config", DEFAULT_ALPACA_EVAL_CONFIG))
     dataset_split = str(alpacaeval_cfg.get("dataset_split", DEFAULT_ALPACA_EVAL_SPLIT))
+    dataset_trust_remote_code = bool(alpacaeval_cfg.get("dataset_trust_remote_code", True))
     backend = str(alpacaeval_cfg.get("backend", "transformers")).lower()
     max_instances = alpacaeval_cfg.get("max_instances")
 
-    dataset = _load_alpacaeval_rows(dataset_name, dataset_config, dataset_split)
+    dataset = _load_alpacaeval_rows(
+        dataset_name,
+        dataset_config,
+        dataset_split,
+        trust_remote_code=dataset_trust_remote_code,
+    )
     if max_instances is not None:
         dataset = dataset[: min(len(dataset), int(max_instances))]
 
@@ -414,6 +427,7 @@ def run_alpacaeval_inference(config: Dict[str, Any]) -> Path:
             "dataset_name": dataset_name,
             "dataset_config": dataset_config,
             "dataset_split": dataset_split,
+            "dataset_trust_remote_code": dataset_trust_remote_code,
             "generation": generation_cfg,
             "simpo_compat": bool(alpacaeval_cfg.get("simpo_compat", False)),
             "use_custom_chat_template": use_custom_chat_template(config),
