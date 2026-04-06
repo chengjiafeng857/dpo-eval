@@ -8,7 +8,7 @@ dataset:
 models:
   sft: "W-61/llama-3-8b-base-hh-harmless-sft-4xh100"
   beta_dpo: "W-61/hh-harmless-base-llama3-8b-beta-dpo"
-  margin_dpo: "W-61/hh-harmless-base-llama3-8b-margin-dpo"
+  margin_dpo: "jackf857/llama-3-8b-base-margin-dpo-hh-4xh100"
   e_dpo: "jackf857/llama3-harmless-base-hh-edpo"
 
 generation:
