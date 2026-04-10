@@ -9,7 +9,7 @@ dataset:
   max_instances: null
 
 models:
-  sft: "W-61/hh-helpful-base-llama3-8b-sft"
+  sft: "W-61/llama-3-8b-base-sft-hh-helpful-8xh200"
   beta_dpo: "W-61/hh-helpful-base-llama3-8b-beta-dpo"
   margin_dpo: "W-61/hh-helpful-base-llama3-8b-margin-dpo"
 
