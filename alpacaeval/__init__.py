@@ -1,1 +1,0 @@
-"""AlpacaEval package and assets."""
