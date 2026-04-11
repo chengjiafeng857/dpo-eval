@@ -1,201 +1,134 @@
-"""Inference pipeline for MT-Bench."""
+"""Inference pipeline for MT-Bench using FastChat's original framework."""
 
 from __future__ import annotations
 
 import argparse
-import time
-import uuid
+import shlex
+import shutil
+import subprocess
+import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from config_utils import load_yaml
-from . import __file__ as _PACKAGE_FILE
 from benchmark_common import (
     get_block_config,
-    get_generation_config,
     get_model_name_or_path,
     get_output_dir,
     get_package_versions,
     get_pretty_name,
-    read_jsonl,
-    resolve_existing_or_download_default_path,
-    resolve_existing_path,
     write_json,
-    write_jsonl,
 )
-from model_generation import (
-    generate_with_transformers,
-    generate_with_vllm,
-    load_render_tokenizer,
-    render_chat_prompts,
-)
-
-
-PACKAGE_DIR = Path(_PACKAGE_FILE).resolve().parent
-DEFAULT_MTBENCH_QUESTION_FILE = "questions.jsonl"
-DEFAULT_MTBENCH_QUESTION_URL = (
-    "https://huggingface.co/spaces/lmsys/mt-bench/resolve/main/"
-    "data/mt_bench/question.jsonl"
+from .fastchat_integration import (
+    FASTCHAT_BENCH_NAME,
+    get_fastchat_workspace,
+    resolve_mtbench_question_file,
+    stage_fastchat_question_file,
 )
 
 
-def _summarize_text(text: str, *, max_chars: int = 512) -> str:
-    if len(text) <= max_chars:
-        return text
-    return f"{text[:max_chars]}..."
-
-
-def _normalize_question_row(row: Dict[str, Any]) -> Dict[str, Any] | None:
-    question_id = row.get("question_id", row.get("id"))
-    if question_id is None:
-        return None
-
-    turns_value = row.get("turns")
-    if isinstance(turns_value, list) and turns_value:
-        turns = [str(turn).strip() for turn in turns_value if str(turn).strip()]
-    else:
-        prompt = str(row.get("question", row.get("prompt", ""))).strip()
-        turns = [prompt] if prompt else []
-
-    if not turns:
-        return None
-
-    return {
-        "question_id": question_id,
-        "category": row.get("category"),
-        "turns": turns,
-    }
-
-
-def _load_mtbench_questions(config: Dict[str, Any]) -> List[Dict[str, Any]]:
+def _get_question_bounds(config: Dict[str, Any]) -> tuple[int | None, int | None]:
     block_cfg = get_block_config(config, "mtbench")
-    question_file = block_cfg.get("question_file", DEFAULT_MTBENCH_QUESTION_FILE)
-    question_path = resolve_existing_or_download_default_path(
-        config,
-        question_file,
-        package_dir=PACKAGE_DIR,
-        default_filename=DEFAULT_MTBENCH_QUESTION_FILE,
-        download_url=DEFAULT_MTBENCH_QUESTION_URL,
-    )
-    if not question_path.exists():
-        raise FileNotFoundError(
-            "Could not find MT-Bench question file. Set mtbench.question_file "
-            "to a valid JSONL path."
-        )
-
-    rows = read_jsonl(question_path)
-    normalized = [row for row in (_normalize_question_row(item) for item in rows) if row]
-    if not normalized:
-        raise ValueError("MT-Bench question file is empty after normalization.")
-
+    question_begin = block_cfg.get("question_begin")
+    question_end = block_cfg.get("question_end")
     max_instances = block_cfg.get("max_instances")
-    if max_instances is not None:
-        normalized = normalized[: int(max_instances)]
-    return normalized
+
+    if question_end is None and max_instances is not None:
+        question_end = int(max_instances)
+
+    return (
+        None if question_begin is None else int(question_begin),
+        None if question_end is None else int(question_end),
+    )
 
 
-def _generate_outputs(
-    config: Dict[str, Any],
-    questions: List[Dict[str, Any]],
-) -> tuple[List[Dict[str, Any]], str]:
-    backend = str(get_block_config(config, "mtbench").get("backend", "vllm")).lower()
-    generation_cfg = get_generation_config(config, "mtbench")
-    tokenizer = load_render_tokenizer(config, "mtbench")
+def _build_fastchat_command(config: Dict[str, Any], *, answer_file: Path) -> list[str]:
+    block_cfg = get_block_config(config, "mtbench")
+    generation_cfg = block_cfg.get("generation", {})
+    if not isinstance(generation_cfg, dict):
+        raise ValueError("mtbench.generation must be a mapping.")
 
-    states = [
-        {
-            "question_id": question["question_id"],
-            "category": question.get("category"),
-            "messages": [],
-            "outputs": [],
-            "turns": list(question["turns"]),
-            "next_turn": 0,
-        }
-        for question in questions
+    question_begin, question_end = _get_question_bounds(config)
+    command = [
+        sys.executable,
+        "-m",
+        "fastchat.llm_judge.gen_model_answer",
+        "--bench-name",
+        FASTCHAT_BENCH_NAME,
+        "--model-path",
+        get_model_name_or_path(config, "mtbench"),
+        "--model-id",
+        get_pretty_name(config, "mtbench"),
+        "--answer-file",
+        str(answer_file),
+        "--max-new-token",
+        str(int(generation_cfg.get("max_new_tokens", 1024))),
+        "--num-choices",
+        str(int(block_cfg.get("num_choices", 1))),
+        "--num-gpus-per-model",
+        str(int(block_cfg.get("num_gpus_per_model", 1))),
+        "--num-gpus-total",
+        str(int(block_cfg.get("num_gpus_total", 1))),
     ]
 
-    prompt_ref = ""
-    while True:
-        active_states = [state for state in states if state["next_turn"] < len(state["turns"])]
-        if not active_states:
-            break
+    max_gpu_memory = block_cfg.get("max_gpu_memory")
+    if max_gpu_memory:
+        command.extend(["--max-gpu-memory", str(max_gpu_memory)])
 
-        conversations = []
-        for state in active_states:
-            user_turn = str(state["turns"][state["next_turn"]])
-            conversations.append(
-                list(state["messages"]) + [{"role": "user", "content": user_turn}]
-            )
+    dtype = config.get("precision")
+    if dtype:
+        command.extend(["--dtype", str(dtype)])
 
-        prompts, current_prompt_ref = render_chat_prompts(
-            config,
-            "mtbench",
-            tokenizer=tokenizer,
-            conversations=conversations,
-            package_dir=PACKAGE_DIR,
-        )
-        if not prompt_ref:
-            prompt_ref = current_prompt_ref
+    revision = block_cfg.get("revision")
+    if revision:
+        command.extend(["--revision", str(revision)])
 
-        if backend == "vllm":
-            outputs = generate_with_vllm(config, "mtbench", prompts, generation_cfg)
-        elif backend == "transformers":
-            outputs = generate_with_transformers(config, "mtbench", prompts, generation_cfg)
-        else:
-            raise ValueError("mtbench.backend must be 'transformers' or 'vllm'.")
+    if question_begin is not None:
+        command.extend(["--question-begin", str(question_begin)])
+    if question_end is not None:
+        command.extend(["--question-end", str(question_end)])
 
-        for state, conversation, output_text in zip(active_states, conversations, outputs, strict=True):
-            state["outputs"].append(output_text)
-            state["messages"] = list(conversation) + [{"role": "assistant", "content": output_text}]
-            state["next_turn"] += 1
-
-    model_id = get_pretty_name(config, "mtbench")
-    payload = [
-        {
-            "question_id": state["question_id"],
-            "answer_id": uuid.uuid4().hex,
-            "model_id": model_id,
-            "choices": [{"index": 0, "turns": list(state["outputs"])}],
-            "tstamp": time.time(),
-            "category": state.get("category"),
-        }
-        for state in states
-    ]
-    return payload, prompt_ref
+    return command
 
 
 def run_mtbench_inference(config: Dict[str, Any]) -> Path:
-    questions = _load_mtbench_questions(config)
     output_dir = get_output_dir(config, "mtbench")
+    workspace_dir = get_fastchat_workspace(config)
+    question_path = resolve_mtbench_question_file(config)
+    staged_question_path = stage_fastchat_question_file(config)
+    staged_answer_path = (
+        workspace_dir
+        / "data"
+        / FASTCHAT_BENCH_NAME
+        / "model_answer"
+        / f"{get_pretty_name(config, 'mtbench')}.jsonl"
+    )
+    staged_answer_path.parent.mkdir(parents=True, exist_ok=True)
+    if staged_answer_path.exists():
+        staged_answer_path.unlink()
+
+    command = _build_fastchat_command(config, answer_file=staged_answer_path)
+    print(f"[MTBench] framework=fastchat_original")
+    print(f"[MTBench] model={get_model_name_or_path(config, 'mtbench')}")
+    print(f"[MTBench] question_file={question_path}")
+    print(f"[MTBench] command={' '.join(shlex.quote(part) for part in command)}")
+    subprocess.run(command, cwd=workspace_dir, check=True)
+
     model_answer_path = output_dir / "model_answer.jsonl"
     metadata_path = output_dir / "metadata.json"
-
-    print(f"[MTBench] model={get_model_name_or_path(config, 'mtbench')}")
-    print(f"[MTBench] num_questions={len(questions)}")
-    print(f"[MTBench] sample_question={_summarize_text(str(questions[0]['turns'][0]))}")
-
-    payload, prompt_ref = _generate_outputs(config, questions)
-    write_jsonl(model_answer_path, payload)
+    shutil.copy2(staged_answer_path, model_answer_path)
     write_json(
         metadata_path,
         {
+            "framework": "fastchat_original",
             "model_name_or_path": get_model_name_or_path(config, "mtbench"),
             "pretty_name": get_pretty_name(config, "mtbench"),
-            "backend": str(get_block_config(config, "mtbench").get("backend", "vllm")).lower(),
-            "prompt_template": prompt_ref,
-            "question_file": str(
-                resolve_existing_path(
-                    config,
-                    get_block_config(config, "mtbench").get(
-                        "question_file",
-                        DEFAULT_MTBENCH_QUESTION_FILE,
-                    ),
-                    package_dir=PACKAGE_DIR,
-                )
-            ),
-            "generation": get_generation_config(config, "mtbench"),
+            "question_file": str(question_path),
+            "staged_question_file": str(staged_question_path),
+            "staged_answer_file": str(staged_answer_path),
+            "command": command,
             "package_versions": get_package_versions(
-                ("torch", "transformers", "vllm")
+                ("torch", "transformers", "fschat", "anthropic")
             ),
         },
     )

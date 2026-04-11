@@ -37,11 +37,11 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-sft-hh-helpful-8xh200-single.json"
-  beta_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-beta-dpo-hh-helpful-8xh200-single.json"
-  margin_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-margin-dpo-hh-helpful-8xh200-single.json"
-  e_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200-single.json"
-  chosen: "outputs/gpt_judge_HH/helpful_base/single_turn/chosen_output_hh.json"
+  sft: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-sft-hh-helpful-8xh200-single.json.json"
+  beta_dpo: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-beta-dpo-hh-helpful-8xh200-single.json"
+  margin_dpo: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-margin-dpo-hh-helpful-8xh200-single.json"
+  e_dpo: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200-single.json"
+  chosen: "outputs/gpt_judge_HH/helpful_base/chosen_output_hh_single.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"

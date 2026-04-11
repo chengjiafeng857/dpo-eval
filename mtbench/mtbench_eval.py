@@ -1,31 +1,29 @@
-"""Evaluation wrapper for MT-Bench."""
+"""Evaluation wrapper for MT-Bench using FastChat's original framework."""
 
 from __future__ import annotations
 
 import argparse
 import shlex
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, Dict
 
 from config_utils import load_yaml
-from . import __file__ as _PACKAGE_FILE
 from benchmark_common import (
-    format_command,
     get_block_config,
-    get_model_name_or_path,
     get_output_dir,
     get_pretty_name,
-    resolve_existing_or_download_default_path,
-    resolve_existing_path,
 )
-
-
-PACKAGE_DIR = Path(_PACKAGE_FILE).resolve().parent
-DEFAULT_MTBENCH_QUESTION_FILE = "questions.jsonl"
-DEFAULT_MTBENCH_QUESTION_URL = (
-    "https://huggingface.co/spaces/lmsys/mt-bench/resolve/main/"
-    "data/mt_bench/question.jsonl"
+from .fastchat_integration import (
+    FASTCHAT_BENCH_NAME,
+    get_fastchat_workspace,
+    resolve_mtbench_path,
+    stage_fastchat_judge_prompts_file,
+    stage_fastchat_model_answer_file,
+    stage_fastchat_question_file,
+    stage_fastchat_reference_answer_file,
 )
 
 
@@ -34,7 +32,7 @@ def _resolve_model_answer_path(
     model_answer_path: str | None,
 ) -> Path:
     if model_answer_path is not None:
-        return resolve_existing_path(config, model_answer_path, package_dir=PACKAGE_DIR)
+        return resolve_mtbench_path(config, model_answer_path)
 
     default_path = get_output_dir(config, "mtbench") / "model_answer.jsonl"
     if default_path.exists():
@@ -44,6 +42,109 @@ def _resolve_model_answer_path(
         "Could not find MT-Bench model answers. Run mtbench-infer first or "
         "pass --model-answer."
     )
+
+
+def _get_judgment_output_path(
+    workspace_dir: Path,
+    *,
+    judge_model: str,
+    mode: str,
+) -> Path:
+    suffix = "single" if mode == "single" else "pair"
+    return (
+        workspace_dir
+        / "data"
+        / FASTCHAT_BENCH_NAME
+        / "model_judgment"
+        / f"{judge_model}_{suffix}.jsonl"
+    )
+
+
+def _get_judge_models(config: Dict[str, Any]) -> list[str]:
+    block_cfg = get_block_config(config, "mtbench")
+    judge_models = block_cfg.get("judge_models")
+    if judge_models is None:
+        return [str(block_cfg.get("judge_model", "gpt-4-1106-preview"))]
+    if not isinstance(judge_models, list) or not judge_models:
+        raise ValueError("mtbench.judge_models must be a non-empty list of strings.")
+    return [str(item) for item in judge_models]
+
+
+def _build_judgment_command(
+    config: Dict[str, Any],
+    *,
+    judge_model: str,
+) -> list[str]:
+    block_cfg = get_block_config(config, "mtbench")
+    mode = str(block_cfg.get("mode", "single"))
+    command = [
+        sys.executable,
+        "-m",
+        "fastchat.llm_judge.gen_judgment",
+        "--bench-name",
+        FASTCHAT_BENCH_NAME,
+        "--judge-file",
+        "data/judge_prompts.jsonl",
+        "--judge-model",
+        judge_model,
+        "--mode",
+        mode,
+        "--model-list",
+        get_pretty_name(config, "mtbench"),
+    ]
+
+    if mode == "pairwise-baseline":
+        command.extend(
+            [
+                "--baseline-model",
+                str(block_cfg.get("baseline_model", "gpt-3.5-turbo")),
+            ]
+        )
+
+    parallel = block_cfg.get("parallel")
+    if parallel is not None:
+        command.extend(["--parallel", str(int(parallel))])
+
+    first_n = block_cfg.get("first_n")
+    if first_n is not None:
+        command.extend(["--first-n", str(int(first_n))])
+
+    return command
+
+
+def _build_show_result_command(
+    config: Dict[str, Any],
+    *,
+    judgment_path: Path,
+    judge_model: str,
+) -> list[str]:
+    block_cfg = get_block_config(config, "mtbench")
+    mode = str(block_cfg.get("mode", "single"))
+    command = [
+        sys.executable,
+        "-m",
+        "fastchat.llm_judge.show_result",
+        "--bench-name",
+        FASTCHAT_BENCH_NAME,
+        "--input-file",
+        str(judgment_path),
+        "--judge-model",
+        judge_model,
+        "--mode",
+        mode,
+        "--model-list",
+        get_pretty_name(config, "mtbench"),
+    ]
+
+    if mode == "pairwise-baseline":
+        command.extend(
+            [
+                "--baseline-model",
+                str(block_cfg.get("baseline_model", "gpt-3.5-turbo")),
+            ]
+        )
+
+    return command
 
 
 def run_mtbench_evaluation(
@@ -57,55 +158,63 @@ def run_mtbench_evaluation(
     results_dir.mkdir(parents=True, exist_ok=True)
 
     resolved_answer_path = _resolve_model_answer_path(config, model_answer_path)
-    question_file = resolve_existing_or_download_default_path(
+    workspace_dir = get_fastchat_workspace(config)
+    staged_question_path = stage_fastchat_question_file(config)
+    staged_prompt_path = stage_fastchat_judge_prompts_file(config)
+    staged_answer_path = stage_fastchat_model_answer_file(
         config,
-        block_cfg.get("question_file", DEFAULT_MTBENCH_QUESTION_FILE),
-        package_dir=PACKAGE_DIR,
-        default_filename=DEFAULT_MTBENCH_QUESTION_FILE,
-        download_url=DEFAULT_MTBENCH_QUESTION_URL,
-    )
-    reference_answer_file = resolve_existing_path(
-        config,
-        block_cfg.get(
-            "reference_answer_file",
-            "reference_answer/gpt-4-1106-preview.jsonl",
-        ),
-        package_dir=PACKAGE_DIR,
-    )
-    judgment_file = results_dir / "mtbench_judgments.jsonl"
-
-    replacements = {
-        "answer_file": str(resolved_answer_path),
-        "question_file": str(question_file),
-        "reference_answer_file": str(reference_answer_file),
-        "results_dir": str(results_dir),
-        "judgment_file": str(judgment_file),
-        "pretty_name": get_pretty_name(config, "mtbench"),
-        "model_name_or_path": get_model_name_or_path(config, "mtbench"),
-        "judge_model": str(block_cfg.get("judge_model", "")),
-    }
-    command = format_command(
-        block_cfg.get("judge_command"),
-        replacements=replacements,
-        field_name="mtbench.judge_command",
+        pretty_name=get_pretty_name(config, "mtbench"),
+        model_answer_path=resolved_answer_path,
     )
 
-    print(f"[MTBench] command={' '.join(shlex.quote(part) for part in command)}")
-    subprocess.run(command, check=True)
+    mode = str(block_cfg.get("mode", "single"))
+    judge_models = _get_judge_models(config)
 
-    show_result_command = block_cfg.get("show_result_command")
-    if show_result_command is not None:
-        resolved_show_command = format_command(
-            show_result_command,
-            replacements=replacements,
-            field_name="mtbench.show_result_command",
+    print(f"[MTBench] framework=fastchat_original")
+    print(f"[MTBench] answer_file={resolved_answer_path}")
+    print(f"[MTBench] staged_question_file={staged_question_path}")
+    print(f"[MTBench] staged_prompt_file={staged_prompt_path}")
+
+    for judge_index, judge_model in enumerate(judge_models):
+        staged_reference_path = stage_fastchat_reference_answer_file(
+            config,
+            judge_model=judge_model,
+        )
+        staged_judgment_path = _get_judgment_output_path(
+            workspace_dir,
+            judge_model=judge_model,
+            mode=mode,
+        )
+        staged_judgment_path.parent.mkdir(parents=True, exist_ok=True)
+        if staged_judgment_path.exists():
+            staged_judgment_path.unlink()
+
+        command = _build_judgment_command(
+            config,
+            judge_model=judge_model,
+        )
+        print(f"[MTBench] judge_model={judge_model}")
+        print(f"[MTBench] staged_reference_file={staged_reference_path}")
+        print(f"[MTBench] command={' '.join(shlex.quote(part) for part in command)}")
+        subprocess.run(command, cwd=workspace_dir, check=True, text=True, input="\n")
+
+        judge_result_path = results_dir / staged_judgment_path.name
+        shutil.copy2(staged_judgment_path, judge_result_path)
+        if judge_index == 0:
+            shutil.copy2(staged_judgment_path, results_dir / "mtbench_judgments.jsonl")
+
+        show_result_command = _build_show_result_command(
+            config,
+            judgment_path=staged_judgment_path,
+            judge_model=judge_model,
         )
         print(
             "[MTBench] show_result_command="
-            f"{' '.join(shlex.quote(part) for part in resolved_show_command)}"
+            f"{' '.join(shlex.quote(part) for part in show_result_command)}"
         )
-        subprocess.run(resolved_show_command, check=True)
+        subprocess.run(show_result_command, cwd=workspace_dir, check=True)
 
+    print(f"[MTBench] staged_answer_file={staged_answer_path}")
     print(f"[MTBench] results_dir={results_dir}")
     return results_dir
 

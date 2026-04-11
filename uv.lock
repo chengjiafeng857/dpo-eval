@@ -202,14 +202,14 @@ name = "anthropic"
 version = "0.86.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "anyio", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "distro", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "docstring-parser", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "httpx", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "jiter", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "pydantic", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "sniffio", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
-    { name = "typing-extensions", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "anyio" },
+    { name = "distro" },
+    { name = "docstring-parser" },
+    { name = "httpx" },
+    { name = "jiter" },
+    { name = "pydantic" },
+    { name = "sniffio" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/37/7a/8b390dc47945d3169875d342847431e5f7d5fa716b2e37494d57cfc1db10/anthropic-0.86.0.tar.gz", hash = "sha256:60023a7e879aa4fbb1fed99d487fe407b2ebf6569603e5047cfe304cebdaa0e5", size = 583820, upload-time = "2026-03-18T18:43:08.017Z" }
 wheels = [
@@ -729,6 +729,7 @@ source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
     { name = "alpaca-eval" },
+    { name = "anthropic" },
     { name = "datasets" },
     { name = "fschat" },
     { name = "huggingface-hub" },
@@ -746,6 +747,7 @@ dependencies = [
 requires-dist = [
     { name = "accelerate", specifier = ">=1.12.0" },
     { name = "alpaca-eval", specifier = "==0.6.2" },
+    { name = "anthropic", specifier = ">=0.50.0" },
     { name = "datasets", specifier = ">=2.18.0,<4" },
     { name = "fschat", specifier = ">=0.2.36" },
     { name = "huggingface-hub", specifier = ">=0.34.0" },

@@ -5,7 +5,7 @@ This repo keeps benchmark wrappers at the repo root:
 - `alpacaeval/`: AlpacaEval local generation plus `alpaca-eval` scoring.
 - `arenahard/`: Arena-Hard local generation plus external judge wrapper.
 - `gpt_judge_HH/`: Anthropic HH generation plus GPT-4o judging.
-- `mtbench/`: MT-Bench local generation plus FastChat judge wrapper.
+- `mtbench/`: MT-Bench wrapper around FastChat's original framework.
 
 Installed entrypoints:
 
@@ -401,13 +401,19 @@ uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
   typically needs `OPENAI_API_KEY`.
 - HH generation requires access to the Anthropic HH dataset on Hugging Face.
 - HH judging requires `OPENAI_API_KEY`.
-- Arena-Hard and MT-Bench require benchmark question files. The checked-in base
-  configs default to `questions.jsonl` inside each benchmark package, so update
-  `arenahard.question_file` and `mtbench.question_file` to point at the real
-  benchmark prompts in your environment.
-- Arena-Hard and MT-Bench judging is wrapped, not bundled. Install the judge
-  tools yourself and override `judge_command` if your local CLI differs from
-  the checked-in examples.
+- Arena-Hard requires its external judge package and API config to be
+  installed separately.
+- MT-Bench now stages the original FastChat `data/mt_bench/...` layout and
+  calls FastChat's `gen_model_answer`, `gen_judgment`, and `show_result`
+  modules directly.
+- The MT-Bench wrapper auto-downloads the default question file,
+  `judge_prompts.jsonl`, and the default reference answers when those config
+  paths are left at their defaults.
+- The checked-in MT-Bench defaults follow the SimPO setup: use the
+  GPT-4-Turbo (`gpt-4-1106-preview`) reference answers and run both reported
+  judge models, `gpt-4-1106-preview` and `gpt-4`.
+- FastChat's MT-Bench modules import `anthropic` at module import time, so
+  that dependency must be present even if you only use an OpenAI judge model.
 
 ## Llama 3 and chat templating
 
@@ -483,8 +489,7 @@ The pipeline reads the `alpacaeval` block in
   `gpu_memory_utilization`.
 - `simpo_compat`: enforces `alpaca-eval==0.6.2` during evaluation.
 
-Arena-Hard and MT-Bench follow the same pattern with benchmark-specific config
-blocks:
+Arena-Hard and MT-Bench use benchmark-specific config blocks:
 
 - `arenahard.*` and `mtbench.*` both include `model_name_or_path`,
   `pretty_name`, `backend`, `output_dir`, `use_custom_chat_template`,
@@ -492,9 +497,10 @@ blocks:
 - `arenahard.judge_command`, `arenahard.judge_config`,
   `arenahard.api_config`, `arenahard.question_file`, `arenahard.judge_model`,
   and `arenahard.baseline_model` control Arena-Hard judge invocation.
-- `mtbench.judge_command`, `mtbench.show_result_command`,
-  `mtbench.reference_answer_file`, `mtbench.question_file`, and
-  `mtbench.judge_model` control MT-Bench judge invocation.
+- `mtbench.question_file`, `mtbench.reference_answer_file`,
+  `mtbench.judge_prompts_file`, `mtbench.judge_model`,
+  `mtbench.judge_models`, `mtbench.mode`, `mtbench.parallel`, and
+  `mtbench.baseline_model` control MT-Bench's original FastChat invocation.
 
 HH judging uses a different config layout:
 

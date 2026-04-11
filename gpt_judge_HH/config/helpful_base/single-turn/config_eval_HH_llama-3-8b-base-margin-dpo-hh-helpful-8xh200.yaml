@@ -7,9 +7,9 @@ dataset:
 
 models:
   sft: "W-61/llama-3-8b-base-sft-hh-helpful-8xh200"
-  beta_dpo: "W-61/hh-helpful-base-llama3-8b-beta-dpo"
+  beta_dpo: "W-61/llama-3-8b-base-beta-dpo-hh-helpful-8xh200"
   margin_dpo: "W-61/llama-3-8b-base-margin-dpo-hh-helpful-8xh200"
-  e_dpo: "jackf857/llama3-helpful-base-hh-edpo"
+  e_dpo: "W-61/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200"
 
 generation:
   model_key: "margin_dpo"
@@ -34,11 +34,11 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-sft-hh-helpful-8xh200-single-turn.json"
-  beta_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/beta_dpo_output_hh.json"
+  sft: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-sft-hh-helpful-8xh200-single.json.json"
+  beta_dpo: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-beta-dpo-hh-helpful-8xh200-single.json"
   margin_dpo: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-margin-dpo-hh-helpful-8xh200-single.json"
-  e_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/e_dpo_output_hh_single.json"
-  chosen: "outputs/gpt_judge_HH/helpful_base/chosen_output_hh.json"
+  e_dpo: "outputs/gpt_judge_HH/helpful_base/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200-single.json"
+  chosen: "outputs/gpt_judge_HH/helpful_base/chosen_output_hh_single.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
