@@ -3,14 +3,16 @@
 This repo keeps benchmark wrappers at the repo root:
 
 - `alpacaeval/`: AlpacaEval local generation plus `alpaca-eval` scoring.
-- `arenahard/`: Arena-Hard local generation plus external judge wrapper.
+- `arenahard_v2/`: Arena-Hard v2.0 local generation, judging, reporting, and
+  batch orchestration.
 - `gpt_judge_HH/`: Anthropic HH generation plus GPT-4o judging.
 - `mtbench/`: MT-Bench local generation plus FastChat judge wrapper.
 
 Installed entrypoints:
 
 - `alpacaeval-infer`, `alpacaeval-eval`, `alpacaeval-batch`
-- `arenahard-infer`, `arenahard-eval`, `arenahard-batch`
+- `arenahard-v2-infer`, `arenahard-v2-judge`, `arenahard-v2-report`,
+  `arenahard-v2-batch`
 - `hh-generate`, `hh-judge`
 - `mtbench-infer`, `mtbench-eval`, `mtbench-batch`
 
@@ -30,8 +32,8 @@ Installed entrypoints:
   `use_custom_chat_template: true`.
 - `alpacaeval/configs/`: checked-in AlpacaEval model-config YAMLs for the
   repo's Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
-- `arenahard/`: Arena-Hard configs, templates, inference, evaluation, and
-  batch orchestration.
+- `arenahard_v2/`: Arena-Hard v2.0 configs, inference, judging, reporting,
+  and batch orchestration.
 - `gpt_judge_HH/generate_hh_output.py`: HH generation and chosen-response
   export entrypoint.
 - `gpt_judge_HH/judge_outputs_gpt4o.py`: GPT-4o pairwise or three-way judge.
@@ -371,12 +373,13 @@ Each results row includes:
 - The judge only compares the intersection of instructions present in all
   selected candidate files.
 
-Arena-Hard:
+Arena-Hard v2.0:
 
 ```bash
-uv run arenahard-infer --config arenahard/config_arenahard.yaml
-uv run arenahard-eval --config arenahard/config_arenahard.yaml
-uv run arenahard-batch --config arenahard/config_arenahard_batch.yaml
+uv run arenahard-v2-infer --config arenahard_v2/config_arenahard_v2.yaml
+uv run arenahard-v2-judge --config arenahard_v2/config_arenahard_v2.yaml
+uv run arenahard-v2-report --config arenahard_v2/config_arenahard_v2.yaml --judge-names gpt-4.1 --control-features markdown length
+uv run arenahard-v2-batch --config arenahard_v2/config_arenahard_v2_batch.yaml
 ```
 
 MT-Bench:
@@ -401,13 +404,11 @@ uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
   typically needs `OPENAI_API_KEY`.
 - HH generation requires access to the Anthropic HH dataset on Hugging Face.
 - HH judging requires `OPENAI_API_KEY`.
-- Arena-Hard and MT-Bench require benchmark question files. The checked-in base
-  configs default to `questions.jsonl` inside each benchmark package, so update
-  `arenahard.question_file` and `mtbench.question_file` to point at the real
-  benchmark prompts in your environment.
-- Arena-Hard and MT-Bench judging is wrapped, not bundled. Install the judge
-  tools yourself and override `judge_command` if your local CLI differs from
-  the checked-in examples.
+- Arena-Hard v2.0 downloads `data/arena-hard-v2.0/question.jsonl` on demand
+  when `arenahard_v2.question_file` is left at the default `question.jsonl`.
+- Arena-Hard v2.0 judging uses the shared OpenAI-compatible endpoint catalog in
+  `arenahard_v2/api_config.yaml`. For the default `gpt-4.1` judge, set
+  `OPENAI_API_KEY`.
 
 ## Llama 3 and chat templating
 
@@ -448,7 +449,7 @@ Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
 - `skip_existing: true` avoids rerunning inference or eval if outputs already
   exist.
 
-Arena-Hard and MT-Bench use the same 8-model batch matrix and the same
+Arena-Hard v2.0 and MT-Bench use the same 8-model batch matrix and the same
 Qwen3/Llama3 family defaults as AlpacaEval:
 
 - Qwen3 uses tokenizer-default chat templating and `stop_token_ids: [151645]`.
@@ -481,15 +482,18 @@ The pipeline reads the `alpacaeval` block in
   `gpu_memory_utilization`.
 - `simpo_compat`: enforces `alpaca-eval==0.6.2` during evaluation.
 
-Arena-Hard and MT-Bench follow the same pattern with benchmark-specific config
-blocks:
+Arena-Hard v2.0 and MT-Bench follow the same config-driven structure with
+benchmark-specific blocks:
 
-- `arenahard.*` and `mtbench.*` both include `model_name_or_path`,
-  `pretty_name`, `backend`, `output_dir`, `use_custom_chat_template`,
-  `prompt_template`, `generation`, `transformers`, and `vllm`.
-- `arenahard.judge_command`, `arenahard.judge_config`,
-  `arenahard.api_config`, `arenahard.question_file`, `arenahard.judge_model`,
-  and `arenahard.baseline_model` control Arena-Hard judge invocation.
+- `arenahard_v2.*` and `mtbench.*` both include `model_name_or_path`,
+  `pretty_name`, local-generation backend settings, chat-template settings, and
+  generation parameters.
+- `arenahard_v2.mode` switches between local model loading and endpoint-backed
+  candidate generation.
+- `arenahard_v2.endpoint_file`, `arenahard_v2.judge_model`,
+  `arenahard_v2.judge_endpoint_name`, `arenahard_v2.question_file`, and
+  `arenahard_v2.benchmark_dir` control Arena-Hard v2.0 artifact generation and
+  judging.
 - `mtbench.judge_command`, `mtbench.show_result_command`,
   `mtbench.reference_answer_file`, `mtbench.question_file`, and
   `mtbench.judge_model` control MT-Bench judge invocation.
@@ -529,12 +533,14 @@ Expected artifacts:
 - `alpacaeval_model_config.yaml`: only written when using model-config
   evaluation.
 
-Arena-Hard and MT-Bench write benchmark-native answer payloads:
+Arena-Hard v2.0 and MT-Bench write benchmark-native answer payloads:
 
-- `model_answer.jsonl`: generated answers in the format expected by the judge
-  tool.
-- `metadata.json`: local generation metadata.
-- `results/`: judge outputs from the configured external command.
+- Arena-Hard v2.0 writes official-style artifacts under
+  `data/arena-hard-v2.0/`, including `question.jsonl`,
+  `model_answer/<pretty_name>.jsonl`,
+  `model_judgment/<judge_name>/<pretty_name>.jsonl`, and
+  `run_metadata/<pretty_name>.json`.
+- MT-Bench writes `model_answer.jsonl`, `metadata.json`, and `results/`.
 
 HH writes simpler JSON artifacts:
 
@@ -554,8 +560,7 @@ Relevant tests live in:
 
 - `test/test_alpacaeval_pipeline.py`
 - `test/test_alpacaeval_batch_runner.py`
-- `test/test_arenahard_pipeline.py`
-- `test/test_arenahard_batch_runner.py`
+- `tests/test_arenahard_v2_pipeline.py`
 - `test/test_mtbench_pipeline.py`
 - `test/test_mtbench_batch_runner.py`
 
