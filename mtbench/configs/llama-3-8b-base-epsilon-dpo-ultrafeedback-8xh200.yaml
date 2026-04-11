@@ -1,0 +1,9 @@
+llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200:
+  model_name: W-61/llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200
+  prompt_template: templates/Llama3-8b-ultrafeedback-binarized-e-dpo.jinja
+  temperature: 0.0
+  max_tokens: 4096
+  stop_token_ids:
+    - 128001
+    - 128009
+  num_choices: 1

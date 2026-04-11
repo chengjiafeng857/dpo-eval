@@ -1,11 +1,8 @@
 dataset:
   repo_id: "Anthropic/hh-rlhf"
-  # Switch between "helpful-base" and "harmless-base".
   data_dir: "helpful-base"
   split: "test"
-  # true: keep only one user turn followed by one assistant turn.
-  # false: keep multi-turn prompts and generate from the full conversation history.
-  single_turn_only: true
+  single_turn_only: false
   max_instances: null
 
 models:
@@ -15,8 +12,8 @@ models:
   e_dpo: "W-61/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200"
 
 generation:
-  model_key: "sft"
-  output_key: "sft"
+  model_key: "e_dpo"
+  output_key: "e_dpo"
   backend: "vllm"
   use_custom_chat_template: false
   prompt_template: "templates/llama3.txt"
@@ -37,15 +34,14 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-sft-hh-helpful-8xh200-single.json"
-  beta_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-beta-dpo-hh-helpful-8xh200-single.json"
-  margin_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-margin-dpo-hh-helpful-8xh200-single.json"
-  e_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200-single.json"
-  chosen: "outputs/gpt_judge_HH/helpful_base/single_turn/chosen_output_hh.json"
+  sft: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-sft-hh-helpful-8xh200-multi.json"
+  beta_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-beta-dpo-hh-helpful-8xh200-multi.json"
+  margin_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-margin-dpo-hh-helpful-8xh200-multi.json"
+  e_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200-multi.json"
+  chosen: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
-  # temperature: 0.0
   max_tokens: 256
   seed: 42
   max_retries: 5
@@ -72,12 +68,10 @@ gpt4_oracle:
     Winner: <"A" or "B" or "TIE">
 
 output:
-  results_file: "outputs/gpt_judge_HH/helpful_base/single_turn/chosen_vs_beta_dpo.jsonl"
-  summary_file: "outputs/gpt_judge_HH/helpful_base/single_turn/chosen_vs_beta_dpo_summary.json"
+  results_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_vs_llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200.jsonl"
+  summary_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_vs_llama-3-8b-base-epsilon-dpo-hh-helpful-8xh200_summary.json"
 
 judge:
-  # The judge script supports at most three candidates. For pairwise chosen-vs-model
-  # runs, switch the second key between "sft", "beta_dpo", and "margin_dpo".
   candidate_keys:
     - "chosen"
-    - "beta_dpo"
+    - "e_dpo"
