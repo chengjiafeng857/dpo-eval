@@ -34,11 +34,11 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "outputs/gpt_judge_HH/helpful/llama-3-8b-base-sft-hh-helpful-8xh200-single.json"
+  sft: "outputs/gpt_judge_HH/helpful/llama-3-8b-base-sft-hh-helpful-8xh200-single.json.json"
   beta_dpo: "outputs/gpt_judge_HH/helpful/beta_dpo_output_hh.json"
-  margin_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/margin_dpo_output_hh.json"
-  e_dpo: "outputs/gpt_judge_HH/helpful_base/single_turn/e_dpo_output_hh_single.json"
-  chosen: "outputs/gpt_judge_HH/helpful_base/single_turn/chosen_output_hh.json"
+  margin_dpo: "outputs/gpt_judge_HH/helpful/margin_dpo_output_hh.json"
+  e_dpo: "outputs/gpt_judge_HH/helpful/e_dpo_output_helpful_single.json"
+  chosen: "outputs/gpt_judge_HH/helpful/chosen_output_helpful_single.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
