@@ -27,6 +27,22 @@ from .fastchat_integration import (
 )
 
 
+def _normalize_fastchat_dtype(precision: Any) -> str | None:
+    if precision is None:
+        return None
+
+    normalized = str(precision).strip().lower()
+    if normalized in {"", "auto", "none"}:
+        return None
+    if normalized in {"bf16", "bfloat16"}:
+        return "bfloat16"
+    if normalized in {"fp16", "float16", "half"}:
+        return "float16"
+    if normalized in {"fp32", "float32", "float"}:
+        return "float32"
+    raise ValueError(f"Unsupported precision value for MT-Bench/FastChat: {precision}")
+
+
 def _get_question_bounds(config: Dict[str, Any]) -> tuple[int | None, int | None]:
     block_cfg = get_block_config(config, "mtbench")
     question_begin = block_cfg.get("question_begin")
@@ -75,9 +91,9 @@ def _build_fastchat_command(config: Dict[str, Any], *, answer_file: Path) -> lis
     if max_gpu_memory:
         command.extend(["--max-gpu-memory", str(max_gpu_memory)])
 
-    dtype = config.get("precision")
+    dtype = _normalize_fastchat_dtype(config.get("precision"))
     if dtype:
-        command.extend(["--dtype", str(dtype)])
+        command.extend(["--dtype", dtype])
 
     revision = block_cfg.get("revision")
     if revision:
