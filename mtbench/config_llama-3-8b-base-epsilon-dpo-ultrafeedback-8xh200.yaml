@@ -9,11 +9,10 @@ mtbench:
   prompt_template: templates/Llama3-8b-ultrafeedback-binarized-e-dpo.jinja
   output_dir: ../outputs/mtbench/llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200
   question_file: questions.jsonl
-  reference_answer_file: reference_answer/gpt-4-1106-preview.jsonl
-  judge_model: gpt-4-1106-preview
+  reference_answer_file: reference_answer/gpt-4-turbo.jsonl
+  judge_model: gpt-4-turbo
   judge_models:
-    - gpt-4-1106-preview
-    - gpt-4
+    - gpt-4-turbo
   judge_command:
     - python
     - -m

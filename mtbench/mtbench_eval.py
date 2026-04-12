@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shlex
 import shutil
 import subprocess
@@ -27,6 +28,10 @@ from .fastchat_integration import (
 )
 
 
+FASTCHAT_JUDGE_OPENAI_VERSION = "0.28.1"
+FASTCHAT_JUDGE_FSCHAT_VERSION = "0.2.36"
+
+
 def _resolve_model_answer_path(
     config: Dict[str, Any],
     model_answer_path: str | None,
@@ -42,6 +47,20 @@ def _resolve_model_answer_path(
         "Could not find MT-Bench model answers. Run mtbench-infer first or "
         "pass --model-answer."
     )
+
+
+def _fastchat_runner_prefix() -> list[str]:
+    return [
+        "uv",
+        "run",
+        "--with",
+        f"openai=={FASTCHAT_JUDGE_OPENAI_VERSION}",
+        "--with",
+        f"fschat=={FASTCHAT_JUDGE_FSCHAT_VERSION}",
+        "--with",
+        "anthropic",
+        "python",
+    ]
 
 
 def _get_judgment_output_path(
@@ -64,7 +83,7 @@ def _get_judge_models(config: Dict[str, Any]) -> list[str]:
     block_cfg = get_block_config(config, "mtbench")
     judge_models = block_cfg.get("judge_models")
     if judge_models is None:
-        return [str(block_cfg.get("judge_model", "gpt-4-1106-preview"))]
+        return [str(block_cfg.get("judge_model", "gpt-4-turbo"))]
     if not isinstance(judge_models, list) or not judge_models:
         raise ValueError("mtbench.judge_models must be a non-empty list of strings.")
     return [str(item) for item in judge_models]
@@ -78,7 +97,7 @@ def _build_judgment_command(
     block_cfg = get_block_config(config, "mtbench")
     mode = str(block_cfg.get("mode", "single"))
     command = [
-        sys.executable,
+        *_fastchat_runner_prefix(),
         "-m",
         "fastchat.llm_judge.gen_judgment",
         "--bench-name",
@@ -121,7 +140,7 @@ def _build_show_result_command(
     block_cfg = get_block_config(config, "mtbench")
     mode = str(block_cfg.get("mode", "single"))
     command = [
-        sys.executable,
+        *_fastchat_runner_prefix(),
         "-m",
         "fastchat.llm_judge.show_result",
         "--bench-name",
@@ -171,6 +190,11 @@ def run_mtbench_evaluation(
     judge_models = _get_judge_models(config)
 
     print(f"[MTBench] framework=fastchat_original")
+    print(
+        "[MTBench] judge_runtime="
+        f"uv with openai=={FASTCHAT_JUDGE_OPENAI_VERSION}, "
+        f"fschat=={FASTCHAT_JUDGE_FSCHAT_VERSION}"
+    )
     print(f"[MTBench] answer_file={resolved_answer_path}")
     print(f"[MTBench] staged_question_file={staged_question_path}")
     print(f"[MTBench] staged_prompt_file={staged_prompt_path}")
@@ -196,7 +220,14 @@ def run_mtbench_evaluation(
         print(f"[MTBench] judge_model={judge_model}")
         print(f"[MTBench] staged_reference_file={staged_reference_path}")
         print(f"[MTBench] command={' '.join(shlex.quote(part) for part in command)}")
-        subprocess.run(command, cwd=workspace_dir, check=True, text=True, input="\n")
+        subprocess.run(
+            command,
+            cwd=workspace_dir,
+            check=True,
+            text=True,
+            input="\n",
+            env=os.environ.copy(),
+        )
 
         judge_result_path = results_dir / staged_judgment_path.name
         shutil.copy2(staged_judgment_path, judge_result_path)
@@ -212,7 +243,12 @@ def run_mtbench_evaluation(
             "[MTBench] show_result_command="
             f"{' '.join(shlex.quote(part) for part in show_result_command)}"
         )
-        subprocess.run(show_result_command, cwd=workspace_dir, check=True)
+        subprocess.run(
+            show_result_command,
+            cwd=workspace_dir,
+            check=True,
+            env=os.environ.copy(),
+        )
 
     print(f"[MTBench] staged_answer_file={staged_answer_path}")
     print(f"[MTBench] results_dir={results_dir}")

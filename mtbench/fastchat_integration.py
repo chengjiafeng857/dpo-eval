@@ -24,7 +24,7 @@ DEFAULT_MTBENCH_QUESTION_URL = (
     "fastchat/llm_judge/data/mt_bench/question.jsonl"
 )
 
-DEFAULT_MTBENCH_REFERENCE_ANSWER_FILE = "reference_answer/gpt-4-1106-preview.jsonl"
+DEFAULT_MTBENCH_REFERENCE_ANSWER_FILE = "reference_answer/gpt-4-turbo.jsonl"
 DEFAULT_MTBENCH_REFERENCE_ANSWER_URL = (
     "https://raw.githubusercontent.com/princeton-nlp/SimPO/main/"
     "eval/mt-bench/gpt-4-1106-preview.jsonl"
