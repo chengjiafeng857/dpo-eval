@@ -131,7 +131,9 @@ def get_metadata_path(config: Dict[str, Any]) -> Path:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    temp_path = path.with_name(f"{path.name}.tmp")
+    temp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    temp_path.replace(path)
 
 
 def write_jsonl(path: Path, rows: Iterable[Dict[str, Any]]) -> None:
@@ -139,7 +141,9 @@ def write_jsonl(path: Path, rows: Iterable[Dict[str, Any]]) -> None:
     text = ""
     for row in rows:
         text += json.dumps(row, ensure_ascii=False) + "\n"
-    path.write_text(text, encoding="utf-8")
+    temp_path = path.with_name(f"{path.name}.tmp")
+    temp_path.write_text(text, encoding="utf-8")
+    temp_path.replace(path)
 
 
 def load_jsonl_map(path: Path, *, key_field: str) -> Dict[str, Dict[str, Any]]:
@@ -248,4 +252,3 @@ def build_answer_row(
         "tstamp": float(question.get("tstamp", 0.0)) or __import__("time").time(),
         "metadata": build_style_metadata(answer_text),
     }
-

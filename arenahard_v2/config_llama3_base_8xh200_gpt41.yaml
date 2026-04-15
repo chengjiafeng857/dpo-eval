@@ -13,6 +13,7 @@ overrides:
     endpoint_file: api_config.yaml
     judge_model: gpt-4.1
     judge_endpoint_name: gpt-4.1
+    judge_parallel: 8
     judge_temperature: 0.0
     judge_max_tokens: 16000
     bootstrap_rounds: 100
@@ -41,4 +42,3 @@ models:
     overrides:
       arenahard_v2:
         prompt_template: ../mtbench/templates/Llama3-8b-ultrafeedback-binarized-e-dpo.jinja
-

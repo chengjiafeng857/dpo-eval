@@ -155,7 +155,11 @@ def write_jsonl(path: Path, payload: Iterable[Dict[str, Any]]) -> None:
 
 def read_jsonl(path: Path) -> List[Dict[str, Any]]:
     rows: List[Dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    # JSONL records are delimited by actual newline characters. Using
+    # splitlines() is too broad here because it also splits on Unicode line
+    # separators such as U+2028, which can legitimately appear inside JSON
+    # string values and would corrupt otherwise-valid records.
+    for line in path.read_text(encoding="utf-8").split("\n"):
         stripped = line.strip()
         if not stripped:
             continue

@@ -153,9 +153,11 @@ def run_arenahard_v2_batch(
                     run_arenahard_v2_inference(config)
             if do_judging:
                 if skip_existing and judgment_path.exists():
-                    print(f"[ArenaHardV2-BATCH] skipping judging; existing_judgments={judgment_path}")
-                else:
-                    run_arenahard_v2_judging(config)
+                    print(
+                        "[ArenaHardV2-BATCH] existing_judgments found; "
+                        f"resuming_or_verifying={judgment_path}"
+                    )
+                run_arenahard_v2_judging(config)
         except Exception as exc:
             message = f"{pretty_name}: {exc}"
             print(f"[ArenaHardV2-BATCH] failed: {message}")
@@ -197,4 +199,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

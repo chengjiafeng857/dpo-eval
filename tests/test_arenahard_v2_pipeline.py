@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import io
 import json
 import tempfile
@@ -11,6 +12,7 @@ from config_utils import load_yaml
 
 from arenahard_v2.batch_runner import build_run_matrix
 from arenahard_v2.common import BLOCK_NAME, load_questions, read_jsonl
+from arenahard_v2.endpoint import EndpointPool, create_chat_completion
 from arenahard_v2.infer import run_arenahard_v2_inference
 from arenahard_v2.judge import run_arenahard_v2_judging
 from arenahard_v2.report import run_arenahard_v2_report
@@ -146,7 +148,343 @@ endpoint-model:
             rows = read_jsonl(answer_path)
             self.assertEqual(rows[0]["messages"][-1]["content"]["answer"], "remote-answer")
 
+    def test_endpoint_logs_retries_and_raises_with_context(self) -> None:
+        class _FailingCompletions:
+            def create(self, **kwargs: object) -> object:
+                raise RuntimeError("simulated endpoint outage")
+
+        class _FailingChat:
+            completions = _FailingCompletions()
+
+        class _FailingClient:
+            chat = _FailingChat()
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            with mock.patch("arenahard_v2.endpoint.OpenAI", return_value=_FailingClient()):
+                with self.assertRaises(RuntimeError) as ctx:
+                    create_chat_completion(
+                        settings={
+                            "model": "gpt-4.1",
+                            "timeout": 7,
+                            "max_retries": 1,
+                            "initial_backoff": 0,
+                            "max_backoff": 0,
+                        },
+                        pool=EndpointPool([{}]),
+                        messages=[{"role": "user", "content": "Hello"}],
+                    )
+
+        log_output = stderr.getvalue()
+        self.assertIn("[ArenaHardV2][endpoint-error]", log_output)
+        self.assertIn("attempt=1/2", log_output)
+        self.assertIn("attempt=2/2", log_output)
+        self.assertIn("timeout=7.0s", log_output)
+        self.assertIn("simulated endpoint outage", log_output)
+        self.assertIn("after 2 attempts", str(ctx.exception))
+
+    def test_endpoint_falls_back_to_raw_http_on_sdk_json_body_error(self) -> None:
+        class _FakeBadRequestError(Exception):
+            pass
+
+        _FakeBadRequestError.__name__ = "BadRequestError"
+
+        class _FailingCompletions:
+            def create(self, **kwargs: object) -> object:
+                raise _FakeBadRequestError("We could not parse the JSON body of your request.")
+
+        class _FailingChat:
+            completions = _FailingCompletions()
+
+        class _FailingClient:
+            chat = _FailingChat()
+
+        class _HttpxResponse:
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self) -> dict[str, object]:
+                return {
+                    "choices": [{"message": {"content": "fallback answer"}}],
+                    "usage": {"total_tokens": 12},
+                }
+
+        class _HttpxClient:
+            def __init__(self, **kwargs: object) -> None:
+                self.kwargs = kwargs
+
+            def __enter__(self) -> "_HttpxClient":
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> bool:
+                return False
+
+            def post(self, url: str, *, content: bytes, headers: dict[str, str]) -> _HttpxResponse:
+                self.url = url
+                self.content = content
+                self.headers = headers
+                return _HttpxResponse()
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            with mock.patch("arenahard_v2.endpoint.OpenAI", return_value=_FailingClient()):
+                with mock.patch("arenahard_v2.endpoint.httpx.Client", return_value=_HttpxClient()):
+                    result = create_chat_completion(
+                        settings={"model": "gpt-4.1", "timeout": 7, "max_retries": 0},
+                        pool=EndpointPool([{}]),
+                        messages=[{"role": "user", "content": "Hello"}],
+                    )
+
+        self.assertEqual(result["answer"], "fallback answer")
+        self.assertEqual(result["usage"]["total_tokens"], 12)
+        self.assertIn("[ArenaHardV2][endpoint-fallback]", stderr.getvalue())
+
+    def test_endpoint_uses_native_gemini_api(self) -> None:
+        class _HttpxResponse:
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self) -> dict[str, object]:
+                return {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [
+                                    {"text": "gemini answer"},
+                                ]
+                            }
+                        }
+                    ],
+                    "usageMetadata": {"totalTokenCount": 42},
+                }
+
+        class _HttpxClient:
+            def __init__(self, **kwargs: object) -> None:
+                self.kwargs = kwargs
+                self.calls: list[dict[str, object]] = []
+
+            def __enter__(self) -> "_HttpxClient":
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> bool:
+                return False
+
+            def post(
+                self,
+                url: str,
+                *,
+                params: dict[str, str],
+                json: dict[str, object],
+            ) -> _HttpxResponse:
+                self.calls.append({"url": url, "params": params, "json": json})
+                return _HttpxResponse()
+
+        client = _HttpxClient()
+        with mock.patch("arenahard_v2.endpoint.httpx.Client", return_value=client):
+            result = create_chat_completion(
+                settings={
+                    "model": "gemini-2.5-pro-preview-03-25",
+                    "api_type": "gemini",
+                    "api_key": "gemini-key",
+                    "timeout": 7,
+                    "max_retries": 0,
+                },
+                pool=EndpointPool([{}]),
+                messages=[
+                    {"role": "system", "content": "Judge carefully"},
+                    {"role": "user", "content": "Prompt 1"},
+                    {"role": "assistant", "content": "Prior turn"},
+                ],
+                temperature=0.3,
+                max_tokens=256,
+            )
+
+        self.assertEqual(result["answer"], "gemini answer")
+        self.assertEqual(result["usage"]["totalTokenCount"], 42)
+        self.assertEqual(
+            client.calls[0]["url"],
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-preview-03-25:generateContent",
+        )
+        self.assertEqual(client.calls[0]["params"], {"key": "gemini-key"})
+        payload = client.calls[0]["json"]
+        self.assertEqual(
+            payload["systemInstruction"]["parts"][0]["text"],
+            "Judge carefully",
+        )
+        self.assertEqual(payload["contents"][0]["role"], "user")
+        self.assertEqual(payload["contents"][0]["parts"][0]["text"], "Prompt 1")
+        self.assertEqual(payload["contents"][1]["role"], "model")
+        self.assertEqual(
+            payload["generationConfig"],
+            {"temperature": 0.3, "maxOutputTokens": 256},
+        )
+        self.assertIn("safetySettings", payload)
+
+    def test_endpoint_uses_vertex_gemini_api(self) -> None:
+        class _HttpxResponse:
+            def raise_for_status(self) -> None:
+                return None
+
+            def json(self) -> dict[str, object]:
+                return {
+                    "candidates": [
+                        {
+                            "content": {
+                                "parts": [
+                                    {"text": "vertex answer"},
+                                ]
+                            }
+                        }
+                    ],
+                    "usageMetadata": {"totalTokenCount": 21},
+                }
+
+        class _HttpxClient:
+            def __init__(self, **kwargs: object) -> None:
+                self.kwargs = kwargs
+                self.calls: list[dict[str, object]] = []
+
+            def __enter__(self) -> "_HttpxClient":
+                return self
+
+            def __exit__(self, exc_type, exc, tb) -> bool:
+                return False
+
+            def post(
+                self,
+                url: str,
+                *,
+                headers: dict[str, str],
+                json: dict[str, object],
+            ) -> _HttpxResponse:
+                self.calls.append({"url": url, "headers": headers, "json": json})
+                return _HttpxResponse()
+
+        client = _HttpxClient()
+        with mock.patch("arenahard_v2.endpoint.subprocess.check_output", return_value="vertex-token\n"):
+            with mock.patch("arenahard_v2.endpoint.httpx.Client", return_value=client):
+                result = create_chat_completion(
+                    settings={
+                        "model": "gemini-2.5-pro-preview-03-25",
+                        "api_type": "vertex",
+                        "project_id": "demo-project",
+                        "regions": "us-central1",
+                        "timeout": 7,
+                        "max_retries": 0,
+                    },
+                    pool=EndpointPool([{}]),
+                    messages=[
+                        {"role": "system", "content": "Judge carefully"},
+                        {"role": "user", "content": "Prompt 1"},
+                    ],
+                    temperature=0.0,
+                    max_tokens=512,
+                )
+
+        self.assertEqual(result["answer"], "vertex answer")
+        self.assertEqual(result["usage"]["totalTokenCount"], 21)
+        self.assertEqual(
+            client.calls[0]["url"],
+            "https://us-central1-aiplatform.googleapis.com/v1/projects/demo-project/locations/us-central1/publishers/google/models/gemini-2.5-pro-preview-03-25:generateContent",
+        )
+        self.assertEqual(
+            client.calls[0]["headers"]["Authorization"],
+            "Bearer vertex-token",
+        )
+        self.assertNotIn("safetySettings", client.calls[0]["json"])
+        self.assertEqual(
+            client.calls[0]["json"]["generationConfig"],
+            {"temperature": 0.0, "maxOutputTokens": 512},
+        )
+
     def test_judging_parses_both_rounds_and_resumes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            benchmark_dir = root / "data"
+            question_file = root / "question.jsonl"
+            _write_jsonl(
+                question_file,
+                [{"uid": "q1", "prompt": "Prompt 1", "category": "hard_prompt"}],
+            )
+            answer_dir = benchmark_dir / "model_answer"
+            _write_jsonl(
+                answer_dir / "candidate.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a1",
+                        "model": "candidate",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "candidate answer"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    }
+                ],
+            )
+            _write_jsonl(
+                answer_dir / "o3-mini-2025-01-31.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a2",
+                        "model": "o3-mini-2025-01-31",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "baseline answer"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    }
+                ],
+            )
+            config_path = root / "config.yaml"
+            _write_yaml(
+                config_path,
+                f"""
+policy_name: candidate
+arenahard_v2:
+  benchmark_dir: {benchmark_dir}
+  pretty_name: candidate
+  model_name_or_path: candidate
+  question_file: {question_file}
+  endpoint_file: {root / "api.yaml"}
+  prompt_template: ../mtbench/templates/should-not-be-used-for-judging.jinja
+  judge_model: gpt-4.1
+  judge_endpoint_name: gpt-4.1
+  judge_parallel: 1
+""",
+            )
+            _write_yaml(
+                root / "api.yaml",
+                """
+gpt-4.1:
+  model: gpt-4.1
+  endpoints: null
+  api_type: openai
+  parallel: 2
+  max_tokens: 128
+  temperature: 0.0
+""",
+            )
+            config = load_yaml(config_path)
+            responses = [{"answer": "reason [[A>B]]"}, {"answer": "reason [A<B]"}]
+            with mock.patch("arenahard_v2.judge.create_chat_completion", side_effect=responses) as mocked_create:
+                judgment_path = run_arenahard_v2_judging(config)
+
+            rows = read_jsonl(judgment_path)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["games"][0]["score"], "A>B")
+            self.assertEqual(rows[0]["games"][1]["score"], "A<B")
+            call_messages = mocked_create.call_args_list[0].kwargs["messages"]
+            self.assertEqual(call_messages[1]["content"], "<|User Prompt|>\nPrompt 1\n\n<|The Start of Assistant A's Answer|>\nbaseline answer\n<|The End of Assistant A's Answer|>\n\n<|The Start of Assistant B's Answer|>\ncandidate answer\n<|The End of Assistant B's Answer|>")
+
+            with mock.patch("arenahard_v2.judge.create_chat_completion", side_effect=RuntimeError("should not be called")):
+                second_path = run_arenahard_v2_judging(config)
+            self.assertEqual(judgment_path, second_path)
+
+    def test_judging_repairs_missing_verdict_label(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             benchmark_dir = root / "data"
@@ -201,6 +539,194 @@ arenahard_v2:
   endpoint_file: {root / "api.yaml"}
   judge_model: gpt-4.1
   judge_endpoint_name: gpt-4.1
+  judge_parallel: 1
+""",
+            )
+            _write_yaml(
+                root / "api.yaml",
+                """
+gpt-4.1:
+  model: gpt-4.1
+  endpoints: null
+  api_type: openai
+  parallel: 1
+  max_tokens: 128
+  temperature: 0.0
+""",
+            )
+            config = load_yaml(config_path)
+            with mock.patch(
+                "arenahard_v2.judge.create_chat_completion",
+                side_effect=[
+                    {"answer": "analysis without label"},
+                    {"answer": "[[A>B]]"},
+                    {"answer": "analysis without label again"},
+                    {"answer": "[[A<B]]"},
+                ],
+            ):
+                judgment_path = run_arenahard_v2_judging(config)
+
+            rows = read_jsonl(judgment_path)
+            self.assertEqual(rows[0]["games"][0]["score"], "A>B")
+            self.assertEqual(rows[0]["games"][1]["score"], "A<B")
+            self.assertIsNotNone(rows[0]["games"][0]["repair"])
+            self.assertIsNotNone(rows[0]["games"][1]["repair"])
+
+    def test_judging_reruns_existing_rows_with_missing_scores(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            benchmark_dir = root / "data"
+            question_file = root / "question.jsonl"
+            _write_jsonl(
+                question_file,
+                [{"uid": "q1", "prompt": "Prompt 1", "category": "hard_prompt"}],
+            )
+            answer_dir = benchmark_dir / "model_answer"
+            _write_jsonl(
+                answer_dir / "candidate.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a1",
+                        "model": "candidate",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "candidate answer"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    }
+                ],
+            )
+            _write_jsonl(
+                answer_dir / "o3-mini-2025-01-31.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a2",
+                        "model": "o3-mini-2025-01-31",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "baseline answer"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    }
+                ],
+            )
+            judgment_dir = benchmark_dir / "model_judgment" / "gpt-4.1"
+            _write_jsonl(
+                judgment_dir / "candidate.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "category": "hard_prompt",
+                        "judge": "gpt-4.1",
+                        "model": "candidate",
+                        "baseline": "o3-mini-2025-01-31",
+                        "games": [{"score": None}, {"score": "A<B"}],
+                    }
+                ],
+            )
+            config_path = root / "config.yaml"
+            _write_yaml(
+                config_path,
+                f"""
+policy_name: candidate
+arenahard_v2:
+  benchmark_dir: {benchmark_dir}
+  pretty_name: candidate
+  model_name_or_path: candidate
+  question_file: {question_file}
+  endpoint_file: {root / "api.yaml"}
+  judge_model: gpt-4.1
+  judge_endpoint_name: gpt-4.1
+  judge_parallel: 1
+""",
+            )
+            _write_yaml(
+                root / "api.yaml",
+                """
+gpt-4.1:
+  model: gpt-4.1
+  endpoints: null
+  api_type: openai
+  parallel: 1
+  max_tokens: 128
+  temperature: 0.0
+""",
+            )
+            config = load_yaml(config_path)
+            with mock.patch(
+                "arenahard_v2.judge.create_chat_completion",
+                side_effect=[
+                    {"answer": "[[A>B]]"},
+                    {"answer": "[[A<B]]"},
+                ],
+            ) as mocked_create:
+                judgment_path = run_arenahard_v2_judging(config)
+
+            self.assertEqual(mocked_create.call_count, 2)
+            rows = read_jsonl(judgment_path)
+            self.assertEqual(rows[0]["games"][0]["score"], "A>B")
+            self.assertEqual(rows[0]["games"][1]["score"], "A<B")
+
+    def test_judging_logs_question_context_and_aborts(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            benchmark_dir = root / "data"
+            question_file = root / "question.jsonl"
+            _write_jsonl(
+                question_file,
+                [{"uid": "q1", "prompt": "Prompt 1", "category": "hard_prompt"}],
+            )
+            answer_dir = benchmark_dir / "model_answer"
+            _write_jsonl(
+                answer_dir / "candidate.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a1",
+                        "model": "candidate",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "candidate answer"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    }
+                ],
+            )
+            _write_jsonl(
+                answer_dir / "o3-mini-2025-01-31.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a2",
+                        "model": "o3-mini-2025-01-31",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "baseline answer"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    }
+                ],
+            )
+            config_path = root / "config.yaml"
+            _write_yaml(
+                config_path,
+                f"""
+policy_name: candidate
+arenahard_v2:
+  benchmark_dir: {benchmark_dir}
+  pretty_name: candidate
+  model_name_or_path: candidate
+  question_file: {question_file}
+  endpoint_file: {root / "api.yaml"}
+  judge_model: gpt-4.1
+  judge_endpoint_name: gpt-4.1
+  judge_parallel: 1
 """,
             )
             _write_yaml(
@@ -216,18 +742,183 @@ gpt-4.1:
 """,
             )
             config = load_yaml(config_path)
-            responses = [{"answer": "reason [[A>B]]"}, {"answer": "reason [A<B]"}]
-            with mock.patch("arenahard_v2.judge.create_chat_completion", side_effect=responses):
-                judgment_path = run_arenahard_v2_judging(config)
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                with mock.patch(
+                    "arenahard_v2.judge.create_chat_completion",
+                    side_effect=RuntimeError("judge endpoint unavailable"),
+                ):
+                    with self.assertRaises(RuntimeError) as ctx:
+                        run_arenahard_v2_judging(config)
 
-            rows = read_jsonl(judgment_path)
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]["games"][0]["score"], "A>B")
-            self.assertEqual(rows[0]["games"][1]["score"], "A<B")
+            log_output = stderr.getvalue()
+            self.assertIn("[ArenaHardV2][judge-error]", log_output)
+            self.assertIn("uid=q1", log_output)
+            self.assertIn("category=hard_prompt", log_output)
+            self.assertIn("model=candidate", log_output)
+            self.assertIn("baseline=o3-mini-2025-01-31", log_output)
+            self.assertIn("judge=gpt-4.1", log_output)
+            self.assertIn("judge endpoint unavailable", log_output)
+            self.assertIn("Arena-Hard v2.0 judging aborted.", str(ctx.exception))
+            self.assertFalse((benchmark_dir / "model_judgment" / "gpt-4.1" / "candidate.jsonl").exists())
 
-            with mock.patch("arenahard_v2.judge.create_chat_completion", side_effect=RuntimeError("should not be called")):
-                second_path = run_arenahard_v2_judging(config)
-            self.assertEqual(judgment_path, second_path)
+    def test_judging_checkpoints_progress_and_resumes_after_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            benchmark_dir = root / "data"
+            question_file = root / "question.jsonl"
+            _write_jsonl(
+                question_file,
+                [
+                    {"uid": "q1", "prompt": "Prompt 1", "category": "hard_prompt"},
+                    {"uid": "q2", "prompt": "Prompt 2", "category": "hard_prompt"},
+                ],
+            )
+            answer_dir = benchmark_dir / "model_answer"
+            _write_jsonl(
+                answer_dir / "candidate.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "a1",
+                        "model": "candidate",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "candidate answer 1"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    },
+                    {
+                        "uid": "q2",
+                        "ans_id": "a2",
+                        "model": "candidate",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 2"},
+                            {"role": "assistant", "content": {"answer": "candidate answer 2"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    },
+                ],
+            )
+            _write_jsonl(
+                answer_dir / "o3-mini-2025-01-31.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "ans_id": "b1",
+                        "model": "o3-mini-2025-01-31",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 1"},
+                            {"role": "assistant", "content": {"answer": "baseline answer 1"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    },
+                    {
+                        "uid": "q2",
+                        "ans_id": "b2",
+                        "model": "o3-mini-2025-01-31",
+                        "messages": [
+                            {"role": "user", "content": "Prompt 2"},
+                            {"role": "assistant", "content": {"answer": "baseline answer 2"}},
+                        ],
+                        "tstamp": 0.0,
+                        "metadata": {"token_len": 2, "header_count": {}, "list_count": {}, "bold_count": {}},
+                    },
+                ],
+            )
+            config_path = root / "config.yaml"
+            _write_yaml(
+                config_path,
+                f"""
+policy_name: candidate
+arenahard_v2:
+  benchmark_dir: {benchmark_dir}
+  pretty_name: candidate
+  model_name_or_path: candidate
+  question_file: {question_file}
+  endpoint_file: {root / "api.yaml"}
+  judge_model: gpt-4.1
+  judge_endpoint_name: gpt-4.1
+  judge_parallel: 1
+""",
+            )
+            _write_yaml(
+                root / "api.yaml",
+                """
+gpt-4.1:
+  model: gpt-4.1
+  endpoints: null
+  api_type: openai
+  parallel: 1
+  max_tokens: 128
+  temperature: 0.0
+""",
+            )
+            config = load_yaml(config_path)
+
+            with mock.patch(
+                "arenahard_v2.judge.create_chat_completion",
+                side_effect=[
+                    {"answer": "ok [[A>B]]"},
+                    {"answer": "ok [[A<B]]"},
+                    RuntimeError("boom on q2"),
+                ],
+            ):
+                with self.assertRaises(RuntimeError):
+                    run_arenahard_v2_judging(config)
+
+            partial_path = benchmark_dir / "model_judgment" / "gpt-4.1" / "candidate.jsonl"
+            partial_rows = read_jsonl(partial_path)
+            self.assertEqual([row["uid"] for row in partial_rows], ["q1"])
+
+            with mock.patch(
+                "arenahard_v2.judge.create_chat_completion",
+                side_effect=[
+                    {"answer": "ok [[A=B]]"},
+                    {"answer": "ok [[A=B]]"},
+                ],
+            ) as mocked_create:
+                run_arenahard_v2_judging(config)
+
+            self.assertEqual(mocked_create.call_count, 2)
+            final_rows = read_jsonl(partial_path)
+            self.assertEqual([row["uid"] for row in final_rows], ["q1", "q2"])
+
+    def test_report_raises_on_invalid_judgment_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            benchmark_dir = root / "data"
+            config_path = root / "config.yaml"
+            _write_yaml(
+                config_path,
+                f"""
+policy_name: candidate
+arenahard_v2:
+  benchmark_dir: {benchmark_dir}
+  bootstrap_rounds: 4
+""",
+            )
+            judgment_dir = benchmark_dir / "model_judgment" / "gpt-4.1"
+            _write_jsonl(
+                judgment_dir / "candidate.jsonl",
+                [
+                    {
+                        "uid": "q1",
+                        "category": "hard_prompt",
+                        "judge": "gpt-4.1",
+                        "model": "candidate",
+                        "baseline": "o3-mini-2025-01-31",
+                        "games": [{"score": "A>B"}, {"score": None}],
+                    }
+                ],
+            )
+            config = load_yaml(config_path)
+            with self.assertRaises(ValueError) as ctx:
+                run_arenahard_v2_report(config, judge_names=["gpt-4.1"], categories=["hard_prompt"])
+            self.assertIn("Invalid Arena-Hard v2.0 judgment rows found", str(ctx.exception))
 
     def test_report_raw_and_style_controlled(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -51,6 +51,7 @@ def load_judgments(
     judge_names: Iterable[str],
 ) -> list[dict[str, Any]]:
     battles: list[dict[str, Any]] = []
+    invalid_rows: list[str] = []
     for judge_name in judge_names:
         judge_dir = benchmark_dir / "model_judgment" / judge_name
         if not judge_dir.exists():
@@ -59,18 +60,27 @@ def load_judgments(
             for row in read_jsonl(file_path):
                 games = row.get("games", [])
                 if len(games) < 2:
+                    invalid_rows.append(f"{file_path.name}: uid={row.get('uid')} missing_games")
                     continue
                 first = games[0]
                 second = games[1]
                 if first is None or second is None:
+                    invalid_rows.append(f"{file_path.name}: uid={row.get('uid')} null_game")
                     continue
                 first_score = first.get("score")
                 second_score = second.get("score")
                 if first_score is None or second_score is None:
+                    invalid_rows.append(f"{file_path.name}: uid={row.get('uid')} missing_score")
                     continue
                 scores = LABEL_TO_SCORE.get(str(second_score), []) + [
                     1.0 - value for value in LABEL_TO_SCORE.get(str(first_score), [])
                 ]
+                if not scores:
+                    invalid_rows.append(
+                        f"{file_path.name}: uid={row.get('uid')} invalid_score_labels="
+                        f"{first_score}/{second_score}"
+                    )
+                    continue
                 for score in scores:
                     battles.append(
                         {
@@ -80,6 +90,16 @@ def load_judgments(
                             "score": float(score),
                         }
                     )
+    if invalid_rows:
+        preview = ", ".join(invalid_rows[:8])
+        remainder = len(invalid_rows) - min(len(invalid_rows), 8)
+        if remainder > 0:
+            preview += f", ... (+{remainder} more)"
+        raise ValueError(
+            "Invalid Arena-Hard v2.0 judgment rows found. "
+            "Fix or rerun judging before generating a report: "
+            + preview
+        )
     return battles
 
 
@@ -343,4 +363,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -11,8 +11,8 @@ overrides:
     mode: local
     backend: vllm
     endpoint_file: api_config.yaml
-    judge_model: gemini-2.5
-    judge_endpoint_name: gemini-2.5
+    judge_model: gemini-2.5-flash
+    judge_endpoint_name: gemini-2.5-flash
     judge_parallel: 1
     judge_temperature: 1.0
     judge_max_tokens: 32000

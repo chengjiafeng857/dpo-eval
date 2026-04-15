@@ -1,0 +1,3 @@
+Judging sft:   0%|          | 0/4 [00:00<?, ?question/s]Judging sft:  25%|██▌       | 1/4 [00:13<00:40, 13.43s/question]Judging sft:  50%|█████     | 2/4 [00:33<00:34, 17.33s/question]Judging sft:  75%|███████▌  | 3/4 [00:55<00:19, 19.51s/question]Judging sft: 100%|██████████| 4/4 [01:11<00:00, 17.96s/question]Judging sft: 100%|██████████| 4/4 [01:11<00:00, 17.83s/question]
+[ArenaHardV2] judge=gpt-4.1
+[ArenaHardV2] wrote_judgment_file=/Users/seanmacbook/Research/dpo/dpo-eval/outputs/arenahard_v2/model_judgment/gpt-4.1/sft.jsonl
