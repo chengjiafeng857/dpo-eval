@@ -1,0 +1,25 @@
+gpt-4-1106-preview:
+  model: gpt-4-1106-preview
+  endpoints: null
+  api_type: openai
+  parallel: 32
+  max_tokens: 4096
+  temperature: 0.0
+
+gpt-4.1:
+  model: gpt-4.1
+  endpoints: null
+  api_type: openai
+  parallel: 32
+  max_tokens: 4096
+  temperature: 0.0
+
+example-openai-compatible-model:
+  model: your-served-model-name
+  endpoints:
+    - api_base: http://127.0.0.1:8000/v1
+      api_key: token-abc123
+  api_type: openai
+  parallel: 8
+  max_tokens: 4096
+  temperature: 0.0

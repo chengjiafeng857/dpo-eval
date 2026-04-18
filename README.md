@@ -3,6 +3,8 @@
 This repo keeps benchmark wrappers at the repo root:
 
 - `alpacaeval/`: AlpacaEval local generation plus `alpaca-eval` scoring.
+- `arenahard/`: Arena-Hard v0.1 local generation, judging, reporting, and
+  batch orchestration.
 - `arenahard_v2/`: Arena-Hard v2.0 local generation, judging, reporting, and
   batch orchestration.
 - `gpt_judge_HH/`: Anthropic HH generation plus GPT-4o judging.
@@ -11,6 +13,8 @@ This repo keeps benchmark wrappers at the repo root:
 Installed entrypoints:
 
 - `alpacaeval-infer`, `alpacaeval-eval`, `alpacaeval-batch`
+- `arenahard-infer`, `arenahard-judge`, `arenahard-report`,
+  `arenahard-batch`
 - `arenahard-v2-infer`, `arenahard-v2-judge`, `arenahard-v2-report`,
   `arenahard-v2-batch`
 - `hh-generate`, `hh-judge`
@@ -32,6 +36,8 @@ Installed entrypoints:
   `use_custom_chat_template: true`.
 - `alpacaeval/configs/`: checked-in AlpacaEval model-config YAMLs for the
   repo's Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
+- `arenahard/`: Arena-Hard v0.1 configs, inference, judging, reporting, and
+  batch orchestration.
 - `arenahard_v2/`: Arena-Hard v2.0 configs, inference, judging, reporting,
   and batch orchestration.
 - `gpt_judge_HH/generate_hh_output.py`: HH generation and chosen-response
@@ -373,6 +379,15 @@ Each results row includes:
 - The judge only compares the intersection of instructions present in all
   selected candidate files.
 
+Arena-Hard v0.1:
+
+```bash
+uv run arenahard-infer --config arenahard/config_arenahard.yaml
+uv run arenahard-judge --config arenahard/config_arenahard.yaml
+uv run arenahard-report --config arenahard/config_arenahard.yaml --judge-names gpt-4-1106-preview
+uv run arenahard-batch --config arenahard/config_arenahard_batch.yaml
+```
+
 Arena-Hard v2.0:
 
 ```bash
@@ -404,6 +419,11 @@ uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
   typically needs `OPENAI_API_KEY`.
 - HH generation requires access to the Anthropic HH dataset on Hugging Face.
 - HH judging requires `OPENAI_API_KEY`.
+- Arena-Hard v0.1 downloads `data/arena-hard-v0.1/question.jsonl` on demand
+  when `arenahard.question_file` is left at the default `question.jsonl`.
+- Arena-Hard v0.1 judging uses the OpenAI-compatible endpoint catalog in
+  `arenahard/api_config.yaml`. For the default `gpt-4-1106-preview` judge, set
+  `OPENAI_API_KEY`.
 - Arena-Hard v2.0 downloads `data/arena-hard-v2.0/question.jsonl` on demand
   when `arenahard_v2.question_file` is left at the default `question.jsonl`.
 - Arena-Hard v2.0 judging uses the shared OpenAI-compatible endpoint catalog in
@@ -533,8 +553,13 @@ Expected artifacts:
 - `alpacaeval_model_config.yaml`: only written when using model-config
   evaluation.
 
-Arena-Hard v2.0 and MT-Bench write benchmark-native answer payloads:
+Arena-Hard v0.1, Arena-Hard v2.0, and MT-Bench write benchmark-native answer payloads:
 
+- Arena-Hard v0.1 writes official-style artifacts under
+  `data/arena-hard-v0.1/`, including `question.jsonl`,
+  `model_answer/<pretty_name>.jsonl`,
+  `model_judgment/<judge_name>/<pretty_name>.jsonl`, and
+  `run_metadata/<pretty_name>.json`.
 - Arena-Hard v2.0 writes official-style artifacts under
   `data/arena-hard-v2.0/`, including `question.jsonl`,
   `model_answer/<pretty_name>.jsonl`,
