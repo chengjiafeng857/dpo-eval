@@ -50,6 +50,13 @@ def _resolve_config_value(cli_value: Any, config_value: Any, default_value: Any)
     return default_value
 
 
+def _expand_path_value(value: Any) -> Any:
+    """Expand env vars and '~' in string config values used as local paths."""
+    if not isinstance(value, str):
+        return value
+    return os.path.expanduser(os.path.expandvars(value))
+
+
 def _resolve_template_path(template_path: str) -> Path:
     """Resolve a custom prompt template path relative to this package when needed."""
     candidate = Path(template_path).expanduser()
@@ -797,14 +804,18 @@ def main() -> None:
         model_key,
     )
 
-    model_name = _resolve_config_value(args.model_name, models_cfg.get(model_key), None)
+    model_name = _expand_path_value(
+        _resolve_config_value(args.model_name, models_cfg.get(model_key), None)
+    )
     if not extract_chosen and not model_name:
         raise ValueError(
             f"No model configured for model_key={model_key!r}. "
             "Set config.models.<key> or pass --model_name."
         )
 
-    output_file = _resolve_config_value(args.output_file, inputs_cfg.get(output_key), None)
+    output_file = _expand_path_value(
+        _resolve_config_value(args.output_file, inputs_cfg.get(output_key), None)
+    )
     if not output_file:
         raise ValueError(
             f"No output file configured for output_key={output_key!r}. "

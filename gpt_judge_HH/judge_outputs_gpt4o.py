@@ -68,6 +68,12 @@ def _load_config(path: str | Path) -> dict[str, Any]:
         return yaml.safe_load(handle) or {}
 
 
+def _expand_path_value(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    return os.path.expanduser(os.path.expandvars(value))
+
+
 def _load_outputs(path: Path) -> dict[str, str]:
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -389,7 +395,7 @@ def main() -> None:
         raise ValueError("judge.candidate_keys must be a list of strings.")
 
     selected_candidates = [
-        (candidate_key, candidate_path_map.get(candidate_key))
+        (candidate_key, _expand_path_value(candidate_path_map.get(candidate_key)))
         for candidate_key in candidate_keys
         if candidate_path_map.get(candidate_key)
     ]
@@ -401,12 +407,16 @@ def main() -> None:
     prompt_template = _resolve_prompt_template(oracle_cfg, len(selected_candidates))
 
     results_path = Path(
-        args.results_file
-        or output_cfg.get("results_file", "test/gpt_judge/results/gpt4o_judgments.jsonl")
+        _expand_path_value(
+            args.results_file
+            or output_cfg.get("results_file", "test/gpt_judge/results/gpt4o_judgments.jsonl")
+        )
     )
     summary_path = Path(
-        args.summary_file
-        or output_cfg.get("summary_file", "test/gpt_judge/results/summary.json")
+        _expand_path_value(
+            args.summary_file
+            or output_cfg.get("summary_file", "test/gpt_judge/results/summary.json")
+        )
     )
 
     model_name = args.model or oracle_cfg.get("model", "gpt-4o-2024-08-06")
