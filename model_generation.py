@@ -47,7 +47,7 @@ def _prepare_tokenizer_path(model_name_or_path: str) -> str:
         try:
             tokenizer_config_path = Path(
                 hf_hub_download(model_name_or_path, filename="tokenizer_config.json")
-            )£
+            )
             tokenizer_source_root = Path(
                 snapshot_download(
                     repo_id=model_name_or_path,

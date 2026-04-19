@@ -308,6 +308,12 @@ def main() -> None:
         help="Override path to margin DPO outputs JSON.",
     )
     parser.add_argument(
+        "--e_dpo",
+        type=str,
+        default=None,
+        help="Override path to e-DPO outputs JSON.",
+    )
+    parser.add_argument(
         "--chosen",
         type=str,
         default=None,
@@ -375,6 +381,7 @@ def main() -> None:
         "dpo": args.dpo,
         "beta_dpo": args.beta_dpo,
         "margin_dpo": args.margin_dpo,
+        "e_dpo": args.e_dpo,
         "chosen": args.chosen,
     }
     for candidate_key, override_path in cli_candidate_overrides.items():
