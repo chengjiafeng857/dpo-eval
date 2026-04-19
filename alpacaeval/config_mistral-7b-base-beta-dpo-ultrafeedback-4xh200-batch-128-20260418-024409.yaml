@@ -1,0 +1,31 @@
+policy_name: /scratch/$USER/dynamic-dpo-v4/outputs/mistral-7b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+precision: bf16
+
+alpacaeval:
+  pretty_name: mistral-7b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+  model_name_or_path: /scratch/$USER/dynamic-dpo-v4/outputs/mistral-7b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+  backend: vllm
+  simpo_compat: false
+  use_custom_chat_template: true
+  prompt_template: templates/ultrafeedback-mistral-7b-base-dpo.txt
+  output_dir: ../outputs/alpacaeval/mistral-7b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+  dataset_name: tatsu-lab/alpaca_eval
+  dataset_config: alpaca_eval
+  dataset_split: eval
+  annotators_config: weighted_alpaca_eval_gpt4_turbo_new
+  evaluation_mode: outputs
+  generation:
+    batch_size: 128
+    do_sample: true
+    max_new_tokens: 4096
+    stop_token_ids:
+      - 2
+    temperature: 0.9
+    top_p: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    trust_remote_code: false
+    gpu_memory_utilization: 0.9
+  transformers:
+    device: cuda
+    trust_remote_code: false

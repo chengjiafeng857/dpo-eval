@@ -1,0 +1,7 @@
+{%- for message in messages -%}
+{%- if message['role'] == 'user' -%}
+{{- (bos_token if loop.index0 == 0 else '') + '[INST] ' + (message['content'] | trim) + ' [/INST]' -}}
+{%- elif message['role'] == 'assistant' -%}
+{{- ' ' + (message['content'] | trim) + eos_token -}}
+{%- endif -%}
+{%- endfor -%}

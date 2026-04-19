@@ -1,0 +1,52 @@
+policy_name: /scratch/$USER/dynamic-dpo-v4/outputs/mistral-7b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+precision: bf16
+
+mtbench:
+  pretty_name: mistral-7b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+  model_name_or_path: /scratch/$USER/dynamic-dpo-v4/outputs/mistral-7b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+  backend: vllm
+  use_custom_chat_template: true
+  prompt_template: templates/ultrafeedback-mistral-7b-base-dpo.jinja
+  output_dir: ../outputs/mtbench/mistral-7b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
+  question_file: questions.jsonl
+  reference_answer_file: reference_answer/gpt-4-turbo.jsonl
+  judge_model: gpt-4-turbo
+  judge_models:
+    - gpt-4-turbo
+  judge_command:
+    - python
+    - -m
+    - fastchat.llm_judge.gen_judgment
+    - --answer-file
+    - "{answer_file}"
+    - --question-file
+    - "{question_file}"
+    - --reference-answer-file
+    - "{reference_answer_file}"
+    - --output-path
+    - "{judgment_file}"
+    - --model-list
+    - "{pretty_name}"
+  show_result_command:
+    - python
+    - -m
+    - fastchat.llm_judge.show_result
+    - --input-file
+    - "{judgment_file}"
+    - --model-list
+    - "{pretty_name}"
+  generation:
+    batch_size: 128
+    do_sample: false
+    max_new_tokens: 1024
+    stop_token_ids:
+      - 2
+    temperature: 0.0
+    top_p: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    trust_remote_code: false
+    gpu_memory_utilization: 0.9
+  transformers:
+    device: cuda
+    trust_remote_code: false

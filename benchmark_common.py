@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shlex
 import urllib.request
@@ -23,7 +24,7 @@ def get_model_name_or_path(config: Dict[str, Any], block_name: str) -> str:
     model_name = block_cfg.get("model_name_or_path") or config.get("policy_name")
     if not model_name:
         raise ValueError(f"{block_name}.model_name_or_path or policy_name is required.")
-    return str(model_name)
+    return os.path.expanduser(os.path.expandvars(str(model_name)))
 
 
 def get_pretty_name(config: Dict[str, Any], block_name: str) -> str:
@@ -33,7 +34,7 @@ def get_pretty_name(config: Dict[str, Any], block_name: str) -> str:
 
 
 def resolve_path(config: Dict[str, Any], path_value: Any) -> Path:
-    path = Path(str(path_value)).expanduser()
+    path = Path(os.path.expandvars(str(path_value))).expanduser()
     if path.is_absolute():
         return path
 
