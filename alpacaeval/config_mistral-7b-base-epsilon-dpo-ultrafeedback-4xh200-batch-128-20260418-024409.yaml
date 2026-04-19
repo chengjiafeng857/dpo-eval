@@ -7,7 +7,7 @@ alpacaeval:
   backend: vllm
   simpo_compat: false
   use_custom_chat_template: true
-  prompt_template: templates/ultrafeedback-mistral-7b-base-dpo.txt
+  prompt_template: templates/mistral-default-chat-template.txt
   output_dir: ../outputs/alpacaeval/mistral-7b-base-epsilon-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval

@@ -6,7 +6,7 @@ mtbench:
   model_name_or_path: /scratch/$USER/dynamic-dpo-v4/outputs/mistral-7b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
   backend: vllm
   use_custom_chat_template: true
-  prompt_template: templates/ultrafeedback-mistral-7b-base-dpo.jinja
+  prompt_template: templates/mistral-default-chat-template.jinja
   output_dir: ../outputs/mtbench/mistral-7b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260418-024409
   question_file: questions.jsonl
   reference_answer_file: reference_answer/gpt-4-turbo.jsonl
