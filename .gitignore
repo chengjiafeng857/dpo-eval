@@ -4,4 +4,3 @@ outputs/
 __pycache__/
 *.pyc
 hf_*/
-arenahard_v2/

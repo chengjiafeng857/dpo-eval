@@ -1,0 +1,32 @@
+policy_name: jackf857/llama-3-8b-base-r-dpo-ultrafeedback-4xh200
+precision: bf16
+
+arenahard:
+  bench_name: arena-hard-v0.1
+  benchmark_dir: ../outputs/arenahard_v1
+  pretty_name: llama-3-8b-base-r-dpo-ultrafeedback-4xh200
+  model_name_or_path: jackf857/llama-3-8b-base-r-dpo-ultrafeedback-4xh200
+  mode: local
+  backend: vllm
+  endpoint_file: api_config.yaml
+  judge_model: gpt-4.1
+  judge_endpoint_name: gpt-4.1
+  question_file: question.jsonl
+  use_custom_chat_template: false
+  bootstrap_rounds: 100
+  generation:
+    batch_size: 128
+    do_sample: false
+    max_new_tokens: 4096
+    stop_token_ids:
+      - 128001
+      - 128009
+    temperature: 0.0
+    top_p: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    trust_remote_code: false
+    gpu_memory_utilization: 0.9
+  transformers:
+    device: cuda
+    trust_remote_code: false
