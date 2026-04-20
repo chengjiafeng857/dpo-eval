@@ -1,4 +1,4 @@
-"""Batch orchestration for MT-Bench inference and evaluation."""
+"""Batch orchestration for AlpacaEval inference and evaluation."""
 
 from __future__ import annotations
 
@@ -9,10 +9,9 @@ from typing import Any, Dict, List
 
 from config_utils import load_yaml
 
-from benchmark_common import get_output_dir, sanitize_name
-
-from .mtbench_eval import run_mtbench_evaluation
-from .mtbench_infer import run_mtbench_inference
+from .alpacaeval_common import get_output_dir, sanitize_name
+from .alpacaeval_eval import run_alpacaeval_evaluation
+from .alpacaeval_infer import run_alpacaeval_inference
 
 
 def _resolve_config_path(config_path: str, base_dir: Path) -> Path:
@@ -37,17 +36,17 @@ def _apply_model_family_defaults(
     model_name_or_path: str,
     pretty_name: str,
 ) -> None:
-    mtbench_cfg = config.setdefault("mtbench", {})
-    generation_cfg = mtbench_cfg.setdefault("generation", {})
+    alpacaeval_cfg = config.setdefault("alpacaeval", {})
+    generation_cfg = alpacaeval_cfg.setdefault("generation", {})
     model_name = model_name_or_path.lower()
     if "qwen3" in model_name:
-        mtbench_cfg["use_custom_chat_template"] = False
-        mtbench_cfg.pop("prompt_template", None)
+        alpacaeval_cfg["use_custom_chat_template"] = False
+        alpacaeval_cfg.pop("prompt_template", None)
         generation_cfg["stop_token_ids"] = [151645]
     elif "llama3" in model_name or "llama-3" in model_name:
-        mtbench_cfg["use_custom_chat_template"] = True
-        mtbench_cfg["prompt_template"] = (
-            f"templates/{sanitize_name(pretty_name)}.jinja"
+        alpacaeval_cfg["use_custom_chat_template"] = True
+        alpacaeval_cfg["prompt_template"] = (
+            f"templates/{sanitize_name(pretty_name)}.txt"
         )
         generation_cfg["stop_token_ids"] = [128001, 128009]
 
@@ -70,11 +69,11 @@ def _build_model_config(
     pretty_name = str(model_entry.get("pretty_name", model_name_or_path))
 
     config["policy_name"] = model_name_or_path
-    mtbench_cfg = config.setdefault("mtbench", {})
-    mtbench_cfg["model_name_or_path"] = model_name_or_path
-    mtbench_cfg["pretty_name"] = pretty_name
-    mtbench_cfg["output_dir"] = str(
-        Path("../outputs/mtbench") / sanitize_name(pretty_name)
+    alpacaeval_cfg = config.setdefault("alpacaeval", {})
+    alpacaeval_cfg["model_name_or_path"] = model_name_or_path
+    alpacaeval_cfg["pretty_name"] = pretty_name
+    alpacaeval_cfg["output_dir"] = str(
+        Path("../outputs/alpacaeval") / sanitize_name(pretty_name)
     )
 
     _apply_model_family_defaults(
@@ -117,9 +116,9 @@ def build_run_matrix(batch_config: Dict[str, Any], *, config_path: Path) -> List
         )
         run_plans.append(
             {
-                "model_name_or_path": str(config["mtbench"]["model_name_or_path"]),
-                "pretty_name": str(config["mtbench"]["pretty_name"]),
-                "output_dir": str(get_output_dir(config, "mtbench")),
+                "model_name_or_path": str(config["alpacaeval"]["model_name_or_path"]),
+                "pretty_name": str(config["alpacaeval"]["pretty_name"]),
+                "output_dir": str(get_output_dir(config)),
                 "config": config,
             }
         )
@@ -127,16 +126,17 @@ def build_run_matrix(batch_config: Dict[str, Any], *, config_path: Path) -> List
 
 
 def _results_exist(config: Dict[str, Any]) -> bool:
-    results_dir = get_output_dir(config, "mtbench") / "results"
+    results_dir = get_output_dir(config) / "results"
     return results_dir.exists() and any(results_dir.iterdir())
 
 
-def run_mtbench_batch(
+def run_alpacaeval_batch(
     batch_config: Dict[str, Any],
     *,
     config_path: str,
     run_inference: bool | None = None,
     run_evaluation: bool | None = None,
+    use_model_configs: bool | None = None,
 ) -> int:
     config_file = Path(config_path).resolve()
     run_plans = build_run_matrix(batch_config, config_path=config_file)
@@ -154,6 +154,11 @@ def run_mtbench_batch(
         raise ValueError("At least one of run_inference or run_evaluation must be enabled.")
 
     skip_existing = bool(batch_config.get("skip_existing", True))
+    eval_with_model_configs = (
+        bool(batch_config.get("use_model_configs", False))
+        if use_model_configs is None
+        else use_model_configs
+    )
     continue_on_error = bool(batch_config.get("continue_on_error", False))
 
     failures: list[str] = []
@@ -161,40 +166,44 @@ def run_mtbench_batch(
         config = run_plan["config"]
         pretty_name = run_plan["pretty_name"]
         output_dir = Path(run_plan["output_dir"])
-        answer_path = output_dir / "model_answer.jsonl"
+        model_outputs_path = output_dir / "model_outputs.json"
 
-        print(f"[MTBench-BATCH] ({run_index}/{len(run_plans)}) model={pretty_name}")
+        print(
+            f"[AlpacaEval-BATCH] ({run_index}/{len(run_plans)}) "
+            f"model={pretty_name}"
+        )
         try:
             if do_inference:
-                if skip_existing and answer_path.exists():
+                if skip_existing and model_outputs_path.exists():
                     print(
-                        "[MTBench-BATCH] skipping inference; "
-                        f"existing_answers={answer_path}"
+                        "[AlpacaEval-BATCH] skipping inference; "
+                        f"existing_outputs={model_outputs_path}"
                     )
                 else:
-                    run_mtbench_inference(config)
+                    run_alpacaeval_inference(config)
 
             if do_evaluation:
-                if skip_existing and _results_exist(config):
+                if skip_existing and not eval_with_model_configs and _results_exist(config):
                     print(
-                        "[MTBench-BATCH] skipping evaluation; "
+                        "[AlpacaEval-BATCH] skipping evaluation; "
                         f"existing_results={output_dir / 'results'}"
                     )
                 else:
-                    resolved_answers = str(answer_path) if answer_path.exists() else None
-                    run_mtbench_evaluation(
+                    resolved_outputs = str(model_outputs_path) if model_outputs_path.exists() else None
+                    run_alpacaeval_evaluation(
                         config,
-                        model_answer_path=resolved_answers,
+                        model_outputs_path=resolved_outputs,
+                        use_model_configs=eval_with_model_configs,
                     )
         except Exception as exc:
             message = f"{pretty_name}: {exc}"
-            print(f"[MTBench-BATCH] failed: {message}")
+            print(f"[AlpacaEval-BATCH] failed: {message}")
             failures.append(message)
             if not continue_on_error:
                 break
 
     if failures:
-        print("[MTBench-BATCH] failed_models=")
+        print("[AlpacaEval-BATCH] failed_models=")
         for message in failures:
             print(f"  - {message}")
         return 1
@@ -202,14 +211,15 @@ def run_mtbench_batch(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run MT-Bench for a model batch")
+    parser = argparse.ArgumentParser(description="Run AlpacaEval for a model batch")
     parser.add_argument(
         "--config",
         type=str,
-        default="mtbench/configs/config_mtbench_batch.yaml",
+        default="alpacaeval/configs/config_alpacaeval_batch.yaml",
     )
     parser.add_argument("--inference-only", action="store_true")
     parser.add_argument("--eval-only", action="store_true")
+    parser.add_argument("--use-model-configs", action="store_true")
     args = parser.parse_args(argv)
 
     if args.inference_only and args.eval_only:
@@ -218,11 +228,12 @@ def main(argv: list[str] | None = None) -> int:
     batch_config = load_yaml(args.config)
     run_inference = None if not args.eval_only else False
     run_evaluation = None if not args.inference_only else False
-    return run_mtbench_batch(
+    return run_alpacaeval_batch(
         batch_config,
         config_path=args.config,
         run_inference=run_inference,
         run_evaluation=run_evaluation,
+        use_model_configs=True if args.use_model_configs else None,
     )
 
 

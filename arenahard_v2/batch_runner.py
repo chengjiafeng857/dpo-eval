@@ -178,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="arenahard_v2/config_arenahard_v2_batch.yaml",
+        default="arenahard_v2/configs/config_arenahard_v2_batch.yaml",
     )
     parser.add_argument("--inference-only", action="store_true")
     parser.add_argument("--judging-only", action="store_true")

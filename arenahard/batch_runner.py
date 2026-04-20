@@ -178,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="arenahard/config_arenahard_batch.yaml",
+        default="arenahard/configs/config_arenahard_batch.yaml",
     )
     parser.add_argument("--inference-only", action="store_true")
     parser.add_argument("--judging-only", action="store_true")
@@ -199,4 +199,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

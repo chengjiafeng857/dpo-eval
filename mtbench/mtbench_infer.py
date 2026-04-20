@@ -209,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="mtbench/config_mtbench.yaml",
+        default="mtbench/configs/config_mtbench.yaml",
     )
     args = parser.parse_args(argv)
 

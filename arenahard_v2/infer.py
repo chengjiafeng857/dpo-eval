@@ -168,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--config",
         type=str,
-        default="arenahard_v2/config_arenahard_v2.yaml",
+        default="arenahard_v2/configs/config_arenahard_v2.yaml",
     )
     parser.add_argument(
         "--endpoint-file",
@@ -183,4 +183,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

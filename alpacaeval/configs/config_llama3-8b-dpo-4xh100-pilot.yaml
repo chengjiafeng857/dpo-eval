@@ -1,0 +1,31 @@
+policy_name: W-61/llama3-8b-dpo-4xh100-pilot
+precision: bf16
+
+alpacaeval:
+  pretty_name: llama3-8b-dpo-4xh100-pilot
+  model_name_or_path: W-61/llama3-8b-dpo-4xh100-pilot
+  backend: vllm
+  simpo_compat: false
+  use_custom_chat_template: false
+  output_dir: ../outputs/alpacaeval/llama3-8b-dpo-4xh100-pilot
+  dataset_name: tatsu-lab/alpaca_eval
+  dataset_config: alpaca_eval
+  dataset_split: eval
+  annotators_config: weighted_alpaca_eval_gpt4_turbo
+  evaluation_mode: outputs
+  generation:
+    batch_size: 128
+    do_sample: true
+    max_new_tokens: 4096
+    stop_token_ids:
+      - 128001
+      - 128009
+    temperature: 0.9
+    top_p: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    trust_remote_code: false
+    gpu_memory_utilization: 0.9
+  transformers:
+    device: cuda
+    trust_remote_code: false

@@ -29,8 +29,8 @@ Installed entrypoints:
   models.
 - `alpacaeval/alpacaeval_common.py`: shared config, path, template, and
   JSON helpers.
-- `alpacaeval/config_alpacaeval.yaml`: single-model example config.
-- `alpacaeval/config_alpacaeval_batch.yaml`: batch config for the repo's
+- `alpacaeval/configs/config_alpacaeval.yaml`: single-model example config.
+- `alpacaeval/configs/config_alpacaeval_batch.yaml`: batch config for the repo's
   UltraFeedback Qwen3 and Llama3 models.
 - `alpacaeval/templates/`: custom prompt templates used when
   `use_custom_chat_template: true`.
@@ -73,14 +73,14 @@ export OPENAI_API_KEY=...
 Run local generation first, then score the saved outputs with `alpaca-eval`:
 
 ```bash
-uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
-uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-infer --config alpacaeval/configs/config_alpacaeval.yaml
+uv run alpacaeval-eval --config alpacaeval/configs/config_alpacaeval.yaml
 ```
 
 Batch mode runs the same two stages for every model in the batch config:
 
 ```bash
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
+uv run alpacaeval-batch --config alpacaeval/configs/config_alpacaeval_batch.yaml
 ```
 
 ### HH GPT-judge full pipeline
@@ -122,8 +122,8 @@ The normal AlpacaEval workflow is two explicit stages:
 The simplest end-to-end run is:
 
 ```bash
-uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
-uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-infer --config alpacaeval/configs/config_alpacaeval.yaml
+uv run alpacaeval-eval --config alpacaeval/configs/config_alpacaeval.yaml
 ```
 
 ### Separate stages
@@ -131,20 +131,20 @@ uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
 Inference only:
 
 ```bash
-uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-infer --config alpacaeval/configs/config_alpacaeval.yaml
 ```
 
 Evaluation only, using the outputs written by the earlier inference step:
 
 ```bash
-uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
+uv run alpacaeval-eval --config alpacaeval/configs/config_alpacaeval.yaml
 ```
 
 Evaluation only, but against an arbitrary saved `model_outputs.json` file:
 
 ```bash
 uv run alpacaeval-eval \
-  --config alpacaeval/config_alpacaeval.yaml \
+  --config alpacaeval/configs/config_alpacaeval.yaml \
   --model-outputs /absolute/path/to/model_outputs.json
 ```
 
@@ -152,29 +152,29 @@ Evaluation with AlpacaEval model-config generation instead of saved outputs:
 
 ```bash
 uv run alpacaeval-eval \
-  --config alpacaeval/config_alpacaeval.yaml \
+  --config alpacaeval/configs/config_alpacaeval.yaml \
   --use-model-configs
 ```
 
 Batch mode, full pipeline:
 
 ```bash
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
+uv run alpacaeval-batch --config alpacaeval/configs/config_alpacaeval_batch.yaml
 ```
 
 Batch mode, separate stages:
 
 ```bash
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --inference-only
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --eval-only
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --use-model-configs
+uv run alpacaeval-batch --config alpacaeval/configs/config_alpacaeval_batch.yaml --inference-only
+uv run alpacaeval-batch --config alpacaeval/configs/config_alpacaeval_batch.yaml --eval-only
+uv run alpacaeval-batch --config alpacaeval/configs/config_alpacaeval_batch.yaml --use-model-configs
 ```
 
 ### What each stage reads and writes
 
 `alpacaeval-infer` reads:
 
-- `alpacaeval/config_alpacaeval.yaml`
+- `alpacaeval/configs/config_alpacaeval.yaml`
 - the configured model in `alpacaeval.model_name_or_path` or top-level
   `policy_name`
 - the configured dataset, defaulting to `tatsu-lab/alpaca_eval`
@@ -382,27 +382,27 @@ Each results row includes:
 Arena-Hard v0.1:
 
 ```bash
-uv run arenahard-infer --config arenahard/config_arenahard.yaml
-uv run arenahard-judge --config arenahard/config_arenahard.yaml
-uv run arenahard-report --config arenahard/config_arenahard.yaml --judge-names gpt-4-1106-preview
-uv run arenahard-batch --config arenahard/config_arenahard_batch.yaml
+uv run arenahard-infer --config arenahard/configs/config_arenahard.yaml
+uv run arenahard-judge --config arenahard/configs/config_arenahard.yaml
+uv run arenahard-report --config arenahard/configs/config_arenahard.yaml --judge-names gpt-4.1
+uv run arenahard-batch --config arenahard/configs/config_arenahard_batch.yaml
 ```
 
 Arena-Hard v2.0:
 
 ```bash
-uv run arenahard-v2-infer --config arenahard_v2/config_arenahard_v2.yaml
-uv run arenahard-v2-judge --config arenahard_v2/config_arenahard_v2.yaml
-uv run arenahard-v2-report --config arenahard_v2/config_arenahard_v2.yaml --judge-names gpt-4.1 --control-features markdown length
-uv run arenahard-v2-batch --config arenahard_v2/config_arenahard_v2_batch.yaml
+uv run arenahard-v2-infer --config arenahard_v2/configs/config_arenahard_v2.yaml
+uv run arenahard-v2-judge --config arenahard_v2/configs/config_arenahard_v2.yaml
+uv run arenahard-v2-report --config arenahard_v2/configs/config_arenahard_v2.yaml --judge-names gpt-4.1 --control-features markdown length
+uv run arenahard-v2-batch --config arenahard_v2/configs/config_arenahard_v2_batch.yaml
 ```
 
 MT-Bench:
 
 ```bash
-uv run mtbench-infer --config mtbench/config_mtbench.yaml
-uv run mtbench-eval --config mtbench/config_mtbench.yaml
-uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
+uv run mtbench-infer --config mtbench/configs/config_mtbench.yaml
+uv run mtbench-eval --config mtbench/configs/config_mtbench.yaml
+uv run mtbench-batch --config mtbench/configs/config_mtbench_batch.yaml
 ```
 
 ## Prerequisites
@@ -458,7 +458,7 @@ Llama 3 template notes:
 
 ## Batch config defaults
 
-`alpacaeval/config_alpacaeval_batch.yaml` is set up for the repo's eight
+`alpacaeval/configs/config_alpacaeval_batch.yaml` is set up for the repo's eight
 Qwen3/Llama3 UltraFeedback and UltraChat checkpoints.
 
 - Backend defaults to `vllm`.
@@ -479,7 +479,7 @@ Qwen3/Llama3 family defaults as AlpacaEval:
 ## Key config fields
 
 The pipeline reads the `alpacaeval` block in
-`alpacaeval/config_alpacaeval.yaml`.
+`alpacaeval/configs/config_alpacaeval.yaml`.
 
 - `model_name_or_path`: model to load. Falls back to top-level `policy_name` if
   omitted.
