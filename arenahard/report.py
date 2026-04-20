@@ -11,8 +11,6 @@ import torch
 from benchmark_common import get_block_config, resolve_path
 from config_utils import load_yaml
 
-from arenahard_v2.math_utils import bootstrap_pairwise_model, one_hot_encode, to_winrate_probabilities
-
 from .common import (
     BLOCK_NAME,
     get_benchmark_dir,
@@ -201,6 +199,19 @@ def build_style_controlled_leaderboard(
     control_features: list[str],
     bootstrap_rounds: int,
 ) -> list[dict[str, str | float]]:
+    try:
+        from arenahard_v2.math_utils import (
+            bootstrap_pairwise_model,
+            one_hot_encode,
+            to_winrate_probabilities,
+        )
+    except ModuleNotFoundError as exc:
+        raise RuntimeError(
+            "Style-controlled Arena-Hard v0.1 reporting requires the optional "
+            "`arenahard_v2` math utilities. Run `arenahard-report` without "
+            "`--control-features`, or restore the missing `arenahard_v2` package."
+        ) from exc
+
     metadata = get_model_style_metadata(benchmark_dir)
     model_features = []
     baseline_features = []

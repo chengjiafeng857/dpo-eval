@@ -42,7 +42,9 @@ py-modules = ["benchmark_common", "config_utils", "model_generation"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["alpacaeval*", "arenahard*", "arenahard_v2*", "gpt_judge_HH*", "mtbench*"]
+include = ["alpacaeval*", "arenahard*", "arenahard_v2*", "gpt_judge_HH*", "mtbench*", "data_generation*"]
+exclude = ["tests*", "outputs*"]
+namespaces = false
 
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]

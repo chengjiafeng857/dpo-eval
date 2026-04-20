@@ -3,12 +3,12 @@ precision: bf16
 
 arenahard:
   bench_name: arena-hard-v0.1
-  benchmark_dir: ../outputs/arenahard_v1
+  benchmark_dir: ../../outputs/arenahard_v1
   pretty_name: llama-3-8b-base-r-dpo-ultrafeedback-4xh200
   model_name_or_path: jackf857/llama-3-8b-base-r-dpo-ultrafeedback-4xh200
   mode: local
   backend: vllm
-  endpoint_file: api_config.yaml
+  endpoint_file: ../api_config.yaml
   judge_model: gpt-4.1
   judge_endpoint_name: gpt-4.1
   question_file: question.jsonl
