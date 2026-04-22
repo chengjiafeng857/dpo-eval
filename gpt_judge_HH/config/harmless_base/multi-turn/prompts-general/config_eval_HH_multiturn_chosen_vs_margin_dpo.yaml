@@ -5,7 +5,7 @@ dataset:
   split: "test"
   # true: keep only one user turn followed by one assistant turn.
   # false: keep multi-turn prompts and generate from the full conversation history.
-  single_turn_only: true
+  single_turn_only: false
   max_instances: null
 
 models:
@@ -36,10 +36,10 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/sft_output_hh.json"
-  beta_dpo: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/beta_dpo_output_hh.json"
-  margin_dpo: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/margin_dpo_output_hh.json"
-  chosen: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/chosen_output_hh.json"
+  sft: "outputs/gpt_judge_HH/harmless_base/multi_turn/sft_output_hh.json"
+  beta_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/beta_dpo_output_hh.json"
+  margin_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-hh-harmless-margin-dpo-4xh100_multi_output_hh.json"
+  chosen: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
@@ -70,10 +70,10 @@ gpt4_oracle:
     Winner: <"A" or "B">
 
 output:
-  results_file: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/chosen_vs_sft.jsonl"
-  summary_file: "eval/outputs/gpt_judge_HH/harmless_base/single_turn/chosen_vs_sft_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_llama-3-8b-base-hh-harmless-margin-dpo-4xh100.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_llama-3-8b-base-hh-harmless-margin-dpo-4xh100_summary.json"
 
 judge:
   candidate_keys:
     - "chosen"
-    - "sft"
+    - "margin_dpo"
