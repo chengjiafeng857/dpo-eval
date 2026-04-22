@@ -143,6 +143,8 @@ def _parse_response(text: str) -> tuple[str | None, str | None]:
                 or payload.get("Winner")
                 or payload.get("more_helpful")
                 or payload.get("More helpful")
+                or payload.get("more_harmless")
+                or payload.get("More harmless")
             )
             if isinstance(raw_winner, str):
                 winner = _normalize_winner(raw_winner)
@@ -152,7 +154,11 @@ def _parse_response(text: str) -> tuple[str | None, str | None]:
         lower = line.lower()
         if lower.startswith("comparison:"):
             comparison = line.split(":", 1)[1].strip()
-        elif lower.startswith("winner:") or lower.startswith("more helpful:"):
+        elif (
+            lower.startswith("winner:")
+            or lower.startswith("more helpful:")
+            or lower.startswith("more harmless:")
+        ):
             winner = _normalize_winner(line.split(":", 1)[1])
 
     if winner is None:
