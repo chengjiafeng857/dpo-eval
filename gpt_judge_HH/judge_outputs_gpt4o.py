@@ -121,11 +121,48 @@ def _normalize_winner(value: str | None) -> str | None:
     return None
 
 
-def _parse_response(text: str) -> tuple[str | None, str | None]:
+DEFAULT_DECISION_FIELDS = [
+    "winner",
+    "more helpful",
+    "more harmless",
+]
+
+
+def _normalize_field_name(value: str) -> str:
+    return re.sub(r"[\s_-]+", " ", value.strip().lower())
+
+
+def _decision_field_names(configured_fields: Any = None) -> list[str]:
+    fields = list(DEFAULT_DECISION_FIELDS)
+    if configured_fields is None:
+        return fields
+    if isinstance(configured_fields, str):
+        fields.append(configured_fields)
+    elif isinstance(configured_fields, list) and all(
+        isinstance(field, str) for field in configured_fields
+    ):
+        fields.extend(configured_fields)
+    else:
+        raise ValueError("gpt4_oracle.decision_fields must be a string or list of strings.")
+
+    normalized = []
+    seen = set()
+    for field in fields:
+        normalized_field = _normalize_field_name(field)
+        if normalized_field and normalized_field not in seen:
+            normalized.append(normalized_field)
+            seen.add(normalized_field)
+    return normalized
+
+
+def _parse_response(
+    text: str, decision_fields: list[str] | None = None
+) -> tuple[str | None, str | None]:
     text = text.strip()
     if not text:
         return None, None
 
+    decision_fields = decision_fields or _decision_field_names()
     comparison: str | None = None
     winner: str | None = None
 
@@ -138,33 +175,39 @@ def _parse_response(text: str) -> tuple[str | None, str | None]:
             raw_comparison = payload.get("comparison") or payload.get("Comparison")
             if isinstance(raw_comparison, str):
                 comparison = raw_comparison.strip()
-            raw_winner = (
-                payload.get("winner")
-                or payload.get("Winner")
-                or payload.get("more_helpful")
-                or payload.get("More helpful")
-                or payload.get("more_harmless")
-                or payload.get("More harmless")
-            )
-            if isinstance(raw_winner, str):
-                winner = _normalize_winner(raw_winner)
+            normalized_payload = {
+                _normalize_field_name(str(key)): value for key, value in payload.items()
+            }
+            for field in decision_fields:
+                raw_winner = normalized_payload.get(field)
+                if isinstance(raw_winner, str):
+                    winner = _normalize_winner(raw_winner)
+                    if winner is not None:
+                        break
 
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     for line in lines:
         lower = line.lower()
         if lower.startswith("comparison:"):
             comparison = line.split(":", 1)[1].strip()
-        elif (
-            lower.startswith("winner:")
-            or lower.startswith("more helpful:")
-            or lower.startswith("more harmless:")
-        ):
-            winner = _normalize_winner(line.split(":", 1)[1])
+            continue
+        if ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        if _normalize_field_name(key) in decision_fields:
+            winner = _normalize_winner(value)
 
     if winner is None:
-        match = re.search(r'"winner"\s*:\s*"(A|B|C|TIE)"', text, re.IGNORECASE)
-        if match:
-            winner = match.group(1).upper()
+        for field in decision_fields:
+            pattern = re.escape(field).replace(r"\ ", r"[\s_-]+")
+            match = re.search(
+                rf'"{pattern}"\s*:\s*"(A|B|C|TIE)"',
+                text,
+                re.IGNORECASE,
+            )
+            if match:
+                winner = match.group(1).upper()
+                break
 
     if winner is None:
         match = re.search(r"\b(A|B|C|TIE)\b", text, re.IGNORECASE)
@@ -311,6 +354,7 @@ def _judge_until_valid(
     max_retries: int,
     initial_backoff: float,
     max_backoff: float,
+    decision_fields: list[str],
     system_prompt: str | None = None,
 ) -> tuple[str | None, str, str, dict[str, Any]]:
     attempts = 0
@@ -332,7 +376,7 @@ def _judge_until_valid(
             max_backoff=max_backoff,
             system_prompt=system_prompt,
         )
-        comparison, winner = _parse_response(content)
+        comparison, winner = _parse_response(content, decision_fields=decision_fields)
         if _winner_is_valid(winner, label_map, prompt_template):
             return comparison, winner, content, usage
 
@@ -508,6 +552,7 @@ def main() -> None:
     initial_backoff = oracle_cfg.get("initial_backoff", 1.0)
     max_backoff = oracle_cfg.get("max_backoff", 60.0)
     system_prompt = oracle_cfg.get("system_prompt")
+    decision_fields = _decision_field_names(oracle_cfg.get("decision_fields"))
 
     max_examples = (
         args.max_examples
@@ -582,6 +627,7 @@ def main() -> None:
                 max_retries=max_retries,
                 initial_backoff=initial_backoff,
                 max_backoff=max_backoff,
+                decision_fields=decision_fields,
                 system_prompt=system_prompt,
             )
 
