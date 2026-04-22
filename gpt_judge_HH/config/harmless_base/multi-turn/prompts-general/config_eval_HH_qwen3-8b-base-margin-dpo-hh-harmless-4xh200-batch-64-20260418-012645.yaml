@@ -61,8 +61,8 @@ gpt4_oracle:
     Winner: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260418-012645.jsonl"
-  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260418-012645_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-general/chosen_vs_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260418-012645.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-general/chosen_vs_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260418-012645_summary.json"
 
 judge:
   candidate_keys:

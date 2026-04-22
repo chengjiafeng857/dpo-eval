@@ -61,8 +61,8 @@ gpt4_oracle:
     More harmless: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star0.6-4xh200-batch-64-20260422-051621.jsonl"
-  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star0.6-4xh200-batch-64-20260422-051621_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-harmless/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star0.6-4xh200-batch-64-20260422-051621.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-harmless/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star0.6-4xh200-batch-64-20260422-051621_summary.json"
 
 judge:
   candidate_keys:

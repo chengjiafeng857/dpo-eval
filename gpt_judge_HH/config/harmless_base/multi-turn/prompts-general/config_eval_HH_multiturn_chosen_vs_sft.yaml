@@ -70,8 +70,8 @@ gpt4_oracle:
     Winner: <"A" or "B">
 
 output:
-  results_file: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_sft.jsonl"
-  summary_file: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_vs_sft_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-general/chosen_vs_sft.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-general/chosen_vs_sft_summary.json"
 
 judge:
   candidate_keys:
