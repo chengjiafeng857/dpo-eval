@@ -552,6 +552,9 @@ def main() -> None:
             labeled_outputs = {
                 label: output_text for label, (_, output_text) in zip(labels, outputs)
             }
+            candidate_labeled_outputs = {
+                output_name: output_text for output_name, output_text in outputs
+            }
 
             if instruction in seen:
                 continue
@@ -583,6 +586,8 @@ def main() -> None:
                         "winner": winner,
                         "winner_key": winner_key,
                         "labels": label_map,
+                        "outputs": labeled_outputs,
+                        "candidate_outputs": candidate_labeled_outputs,
                         "model": model_name,
                         "raw_response": content,
                         "usage": usage,
