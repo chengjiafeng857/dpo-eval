@@ -488,6 +488,11 @@ def main() -> None:
             or output_cfg.get("summary_file", "test/gpt_judge/results/summary.json")
         )
     )
+    if results_path.exists() and not args.resume:
+        raise FileExistsError(
+            f"Results file already exists: {results_path}. "
+            "Remove or archive it first, or rerun with --resume to continue it."
+        )
 
     model_name = args.model or oracle_cfg.get("model", "gpt-4o-2024-08-06")
     temperature = oracle_cfg.get("temperature", 0.0)
