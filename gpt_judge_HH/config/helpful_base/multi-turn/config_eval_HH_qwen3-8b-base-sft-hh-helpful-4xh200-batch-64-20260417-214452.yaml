@@ -40,7 +40,7 @@ gpt4_oracle:
   max_retries: 5
   initial_backoff: 1.0
   max_backoff: 60.0
-  system_prompt: "You are a strict evaluator."
+  system_prompt: 
   prompt_template_pairwise: |
     For the following query to a chatbot, which response is more helpful?
 
