@@ -171,6 +171,7 @@ def _parse_response(text: str) -> tuple[str | None, str | None]:
 def _init_counts(candidate_names: list[str]) -> dict[str, int]:
     counts = {name: 0 for name in candidate_names}
     counts["TIE"] = 0
+    counts["Error"] = 0
     return counts
 
 
@@ -181,6 +182,9 @@ def _record_count(counts: dict[str, int], winner_key: str | None) -> None:
     if winner_key.upper() == "TIE":
         counts["TIE"] += 1
         return
+    if winner_key.upper() == "ERROR":
+        counts["Error"] += 1
+        return
     if winner_key not in counts:
         counts[winner_key] = 0
     counts[winner_key] += 1
@@ -189,12 +193,15 @@ def _record_count(counts: dict[str, int], winner_key: str | None) -> None:
 def _summarize(counts: dict[str, int], total: int) -> dict[str, Any]:
     if total == 0:
         return {"total": 0, "counts": counts, "win_rates": {}}
-    non_tie_total = total - counts.get("TIE", 0)
-    if non_tie_total <= 0:
-        win_rates = {key: 0.0 for key in counts if key != "TIE"}
+    excluded_keys = {"TIE", "Error"}
+    rated_total = total - sum(counts.get(key, 0) for key in excluded_keys)
+    if rated_total <= 0:
+        win_rates = {key: 0.0 for key in counts if key not in excluded_keys}
     else:
         win_rates = {
-            key: value / non_tie_total for key, value in counts.items() if key != "TIE"
+            key: value / rated_total
+            for key, value in counts.items()
+            if key not in excluded_keys
         }
     return {"total": total, "counts": counts, "win_rates": win_rates}
 
@@ -333,13 +340,7 @@ def _judge_until_valid(
         time.sleep(backoff)
         backoff = min(backoff * 2, max_backoff)
 
-    valid_labels = ", ".join(label_map)
-    raise RuntimeError(
-        "Judge returned no valid winner after "
-        f"{max_retries} retries; expected one of {valid_labels}. "
-        f"Last parsed winner={last_winner!r}, comparison={last_comparison!r}, "
-        f"raw_response={last_content!r}, usage={last_usage!r}"
-    )
+    return last_comparison, "Error", last_content, last_usage
 
 
 def main() -> None:
