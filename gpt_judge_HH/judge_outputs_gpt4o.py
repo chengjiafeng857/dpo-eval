@@ -277,6 +277,71 @@ def _call_gpt4_oracle(
     raise RuntimeError(f"OpenAI API failed after {max_retries} retries") from last_error
 
 
+def _winner_is_valid(
+    winner: str | None,
+    label_map: dict[str, str],
+    prompt_template: str,
+) -> bool:
+    if winner in label_map:
+        return True
+    return winner == "TIE" and "TIE" in prompt_template
+
+
+def _judge_until_valid(
+    client: OpenAI,
+    prompt: str,
+    label_map: dict[str, str],
+    prompt_template: str,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    max_retries: int,
+    initial_backoff: float,
+    max_backoff: float,
+    system_prompt: str | None = None,
+) -> tuple[str | None, str, str, dict[str, Any]]:
+    attempts = 0
+    backoff = initial_backoff
+    last_content = ""
+    last_comparison: str | None = None
+    last_winner: str | None = None
+    last_usage: dict[str, Any] = {}
+
+    while attempts <= max_retries:
+        content, usage = _call_gpt4_oracle(
+            client=client,
+            prompt=prompt,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            max_retries=max_retries,
+            initial_backoff=initial_backoff,
+            max_backoff=max_backoff,
+            system_prompt=system_prompt,
+        )
+        comparison, winner = _parse_response(content)
+        if _winner_is_valid(winner, label_map, prompt_template):
+            return comparison, winner, content, usage
+
+        last_content = content
+        last_comparison = comparison
+        last_winner = winner
+        last_usage = usage
+        attempts += 1
+        if attempts > max_retries:
+            break
+        time.sleep(backoff)
+        backoff = min(backoff * 2, max_backoff)
+
+    valid_labels = ", ".join(label_map)
+    raise RuntimeError(
+        "Judge returned no valid winner after "
+        f"{max_retries} retries; expected one of {valid_labels}. "
+        f"Last parsed winner={last_winner!r}, comparison={last_comparison!r}, "
+        f"raw_response={last_content!r}, usage={last_usage!r}"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Use GPT-4o to directly judge two or three output files."
@@ -491,9 +556,11 @@ def main() -> None:
                 continue
 
             prompt = _build_prompt(prompt_template, instruction, labeled_outputs)
-            content, usage = _call_gpt4_oracle(
+            comparison, winner, content, usage = _judge_until_valid(
                 client=client,
                 prompt=prompt,
+                label_map=label_map,
+                prompt_template=prompt_template,
                 model=model_name,
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -502,9 +569,6 @@ def main() -> None:
                 max_backoff=max_backoff,
                 system_prompt=system_prompt,
             )
-            comparison, winner = _parse_response(content)
-            if winner is None or (winner not in label_map and winner != "TIE"):
-                winner = "TIE"
 
             winner_key = label_map.get(winner, winner)
             _record_count(counts, winner_key)
