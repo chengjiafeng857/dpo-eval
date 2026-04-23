@@ -1,6 +1,6 @@
 inputs:
-  chosen: "outputs/gpt_judge_HH/helpful_base/chosen_output_hh.json"
-  new_dpo_s_star0_4: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-new-dpo-hh-helpful-s_star0.4-4xh200-batch-64-20260421-214335-rerun-multi.json"
+  chosen: "outputs/RMjudge/pairrm/helpful_base/multi_turn/chosen_output_hh.json"
+  new_dpo_s_star0_4: "outputs/RMjudge/pairrm/helpful_base/multi_turn/llama-3-8b-base-new-dpo-hh-helpful-s_star0.4-4xh200-batch-64-20260421-214335-rerun-multi/llama-3-8b-base-new-dpo-hh-helpful-s_star0.4-4xh200-batch-64-20260421-214335-rerun-multi.json"
 
 judge:
   backend: pairrm
@@ -11,5 +11,5 @@ judge:
   tie_epsilon: 0.0
 
 output:
-  results_file: "outputs/RMjudge/pairrm/helpful_base/multi_turn/chosen_vs_new_dpo_s_star0_4.jsonl"
-  summary_file: "outputs/RMjudge/pairrm/helpful_base/multi_turn/chosen_vs_new_dpo_s_star0_4_summary.json"
+  results_file: "outputs/RMjudge/pairrm/helpful_base/multi_turn/llama-3-8b-base-new-dpo-hh-helpful-s_star0.4-4xh200-batch-64-20260421-214335-rerun-multi/chosen_vs_new_dpo_s_star0_4.jsonl"
+  summary_file: "outputs/RMjudge/pairrm/helpful_base/multi_turn/llama-3-8b-base-new-dpo-hh-helpful-s_star0.4-4xh200-batch-64-20260421-214335-rerun-multi/chosen_vs_new_dpo_s_star0_4_summary.json"

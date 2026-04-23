@@ -1,6 +1,6 @@
 inputs:
-  chosen: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_output_hh.json"
-  new_dpo_hh_s_star0_85: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star0.85-4xh200-batch-64-20260421-213851-multi.json"
+  chosen: "outputs/RMjudge/armorm/harmless_base/multi_turn/chosen_output_hh.json"
+  new_dpo_hh_s_star0_85: "outputs/RMjudge/armorm/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star0.85-4xh200-batch-64-20260421-213851-multi/llama-3-8b-base-new-dpo-hh-harmless-s_star0.85-4xh200-batch-64-20260421-213851-multi.json"
 
 judge:
   backend: armorm
@@ -15,5 +15,5 @@ judge:
   tie_epsilon: 0.0
 
 output:
-  results_file: "outputs/RMjudge/armorm/harmless_base/multi_turn/chosen_vs_new_dpo_hh_s_star0_85.jsonl"
-  summary_file: "outputs/RMjudge/armorm/harmless_base/multi_turn/chosen_vs_new_dpo_hh_s_star0_85_summary.json"
+  results_file: "outputs/RMjudge/armorm/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star0.85-4xh200-batch-64-20260421-213851-multi/chosen_vs_new_dpo_hh_s_star0_85.jsonl"
+  summary_file: "outputs/RMjudge/armorm/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star0.85-4xh200-batch-64-20260421-213851-multi/chosen_vs_new_dpo_hh_s_star0_85_summary.json"
