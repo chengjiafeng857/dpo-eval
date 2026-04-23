@@ -36,9 +36,9 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/sft_output_hh.json"
-  beta_dpo: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/beta_dpo_output_hh.json"
-  margin_dpo: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/margin_dpo_output_hh.json"
+  sft: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/sft_output_hh/sft_output_hh.json"
+  beta_dpo: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/beta_dpo_output_hh/beta_dpo_output_hh.json"
+  margin_dpo: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/margin_dpo_output_hh/margin_dpo_output_hh.json"
   chosen: "eval/outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:

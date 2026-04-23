@@ -34,10 +34,10 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-sft-hh-harmless-8xh200-single.json"
-  beta_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-beta-dpo-hh-harmless-8xh200-single.json"
-  margin_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64-single.json"
-  e_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-epsilon-dpo-hh-harmless-8xh200-single.json"
+  sft: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-sft-hh-harmless-8xh200-single/llama-3-8b-base-sft-hh-harmless-8xh200-single.json"
+  beta_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-beta-dpo-hh-harmless-8xh200-single/llama-3-8b-base-beta-dpo-hh-harmless-8xh200-single.json"
+  margin_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64-single/llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64-single.json"
+  e_dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-epsilon-dpo-hh-harmless-8xh200-single/llama-3-8b-base-epsilon-dpo-hh-harmless-8xh200-single.json"
   chosen: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_output_hh.json"
 
 gpt4_oracle:
@@ -68,8 +68,8 @@ gpt4_oracle:
     Winner: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_vs_llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64.jsonl"
-  summary_file: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_vs_llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64-single/chosen_vs_llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64-single/chosen_vs_llama-3-8b-base-margin-dpo-hh-harmless-batch-size-64_summary.json"
 
 judge:
   candidate_keys:

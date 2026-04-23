@@ -31,7 +31,7 @@ generation:
   trust_remote_code: false
 
 inputs:
-  dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0-single.json"
+  dpo: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0-single/llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0-single.json"
   chosen: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_output_hh.json"
 
 gpt4_oracle:
@@ -62,8 +62,8 @@ gpt4_oracle:
     Winner: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_vs_llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0.jsonl"
-  summary_file: "outputs/gpt_judge_HH/harmless_base/single_turn/chosen_vs_llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0-single/chosen_vs_llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/single_turn/llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0-single/chosen_vs_llama-3-8b-base-new-dpo-harmless-4xh200-s_star1.0_summary.json"
 
 judge:
   candidate_keys:

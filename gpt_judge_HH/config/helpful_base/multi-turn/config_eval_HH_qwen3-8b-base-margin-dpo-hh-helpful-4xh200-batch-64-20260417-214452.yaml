@@ -30,8 +30,8 @@ generation:
   trust_remote_code: false
 
 inputs:
-  margin_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452-multi.json"
-  chosen: "outputs/gpt_judge_HH/helpful_base/chosen_output_hh.json"
+  margin_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452-multi/qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452-multi.json"
+  chosen: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
@@ -60,8 +60,8 @@ gpt4_oracle:
     More helpful: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_vs_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452.jsonl"
-  summary_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_vs_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452_summary.json"
+  results_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452-multi/chosen_vs_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452.jsonl"
+  summary_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452-multi/chosen_vs_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260417-214452_summary.json"
 
 judge:
   candidate_keys:

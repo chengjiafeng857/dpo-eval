@@ -31,8 +31,8 @@ generation:
   trust_remote_code: false
 
 inputs:
-  e_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920-multi.json"
-  chosen: "outputs/gpt_judge_HH/helpful_base/chosen_output_hh.json"
+  e_dpo: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920-multi/llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920-multi.json"
+  chosen: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:
   model: "gpt-4o-2024-08-06"
@@ -61,8 +61,8 @@ gpt4_oracle:
     More helpful: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_vs_llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920.jsonl"
-  summary_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/chosen_vs_llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920_summary.json"
+  results_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920-multi/chosen_vs_llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920.jsonl"
+  summary_file: "outputs/gpt_judge_HH/helpful_base/multi_turn/llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920-multi/chosen_vs_llama-3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260418-001920_summary.json"
 
 judge:
   candidate_keys:

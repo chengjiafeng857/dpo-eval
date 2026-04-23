@@ -37,10 +37,10 @@ generation:
   trust_remote_code: false
 
 inputs:
-  sft: "outputs/gpt_judge_HH/harmless_base/multi_turn/sft_output_hh.json"
-  beta_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/beta_dpo_output_hh.json"
-  margin_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/margin_dpo_output_hh.json"
-  e_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/e_dpo_output_harmless_multiturn.json"
+  sft: "outputs/gpt_judge_HH/harmless_base/multi_turn/sft_output_hh/sft_output_hh.json"
+  beta_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/beta_dpo_output_hh/beta_dpo_output_hh.json"
+  margin_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/margin_dpo_output_hh/margin_dpo_output_hh.json"
+  e_dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/e_dpo_output_harmless_multiturn/e_dpo_output_harmless_multiturn.json"
   chosen: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:
@@ -71,8 +71,8 @@ gpt4_oracle:
     More harmless: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-harmless/chosen_vs_e_dpo.jsonl"
-  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/prompts-harmless/chosen_vs_e_dpo_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/e_dpo_output_harmless_multiturn/prompts-harmless/chosen_vs_e_dpo.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/e_dpo_output_harmless_multiturn/prompts-harmless/chosen_vs_e_dpo_summary.json"
 
 judge:
   candidate_keys:
