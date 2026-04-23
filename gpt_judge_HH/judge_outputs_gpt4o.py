@@ -1,5 +1,5 @@
 """
-Directly judge three output files with GPT-4o using a config-driven prompt.
+Judge HH output files with OpenAI, PairRM, or ArmoRM using a shared output schema.
 """
 
 from __future__ import annotations
@@ -17,10 +17,7 @@ from typing import Any
 import yaml
 from tqdm import tqdm
 
-try:
-    from openai import OpenAI
-except ImportError as exc:
-    raise RuntimeError("openai package is required to run this script.") from exc
+from gpt_judge_HH.rm_judges import build_local_judge
 
 
 DEFAULT_PAIRWISE_PROMPT_TEMPLATE = """For the following query to a chatbot, which response is more helpful?
@@ -73,23 +70,29 @@ def _expand_path_value(value: Any) -> Any:
     return os.path.expanduser(os.path.expandvars(value))
 
 
-def _load_outputs(path: Path) -> dict[str, str]:
+def _load_outputs(path: Path) -> dict[str, dict[str, Any]]:
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, list):
         raise ValueError(f"Expected a list of outputs in {path}")
     outputs = {}
     for row in data:
+        if not isinstance(row, dict):
+            continue
         instruction = row.get("instruction")
         output = row.get("output")
         if not instruction or output is None:
             continue
-        if instruction not in outputs:
-            outputs[instruction] = output
+        instruction_key = str(instruction)
+        if instruction_key not in outputs:
+            normalized_row = dict(row)
+            normalized_row["instruction"] = instruction_key
+            normalized_row["output"] = str(output)
+            outputs[instruction_key] = normalized_row
     return outputs
 
 
-def _intersection_keys(*maps: dict[str, str]) -> list[str]:
+def _intersection_keys(*maps: dict[str, Any]) -> list[str]:
     if not maps:
         return []
     keys = set(maps[0].keys())
@@ -110,6 +113,18 @@ def _build_prompt(
     return template.format(
         **format_values,
     )
+
+
+def _resolve_prompt_text(
+    instruction: str,
+    candidate_rows: list[tuple[str, dict[str, Any]]],
+    prompt_field: str,
+) -> str:
+    for _, row in candidate_rows:
+        value = row.get(prompt_field)
+        if isinstance(value, str) and value.strip():
+            return value
+    return instruction
 
 
 def _normalize_winner(value: str | None) -> str | None:
@@ -286,8 +301,42 @@ def _resolve_prompt_template(
     return _default_prompt_template(num_candidates)
 
 
+def _normalize_backend(value: Any) -> str:
+    backend = str(value or "openai").strip().lower()
+    aliases = {
+        "gpt": "openai",
+        "gpt4": "openai",
+        "gpt4o": "openai",
+        "gpt-4o": "openai",
+        "rm": "armorm",
+        "reward": "armorm",
+    }
+    return aliases.get(backend, backend)
+
+
+def _default_local_model(backend: str) -> str:
+    if backend == "pairrm":
+        return "llm-blender/PairRM"
+    if backend == "armorm":
+        return "RLHFlow/ArmoRM-Llama3-8B-v0.1"
+    return "gpt-4o-2024-08-06"
+
+
+def _resolve_model_name(
+    backend: str,
+    args_model: str | None,
+    oracle_cfg: dict[str, Any],
+    judge_cfg: dict[str, Any],
+) -> str:
+    if args_model:
+        return args_model
+    if backend == "openai":
+        return oracle_cfg.get("model", _default_local_model(backend))
+    return judge_cfg.get("model", _default_local_model(backend))
+
+
 def _call_gpt4_oracle(
-    client: OpenAI,
+    client: Any,
     prompt: str,
     model: str,
     temperature: float,
@@ -344,7 +393,7 @@ def _winner_is_valid(
 
 
 def _judge_until_valid(
-    client: OpenAI,
+    client: Any,
     prompt: str,
     label_map: dict[str, str],
     prompt_template: str,
@@ -395,7 +444,7 @@ def _judge_until_valid(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Use GPT-4o to directly judge two or three output files."
+        description="Judge two or three HH output files with OpenAI, PairRM, or ArmoRM."
     )
     parser.add_argument(
         "--config",
@@ -443,7 +492,7 @@ def main() -> None:
         "--model",
         type=str,
         default=None,
-        help="Override GPT-4o model name for judging.",
+        help="Override judge model name.",
     )
     parser.add_argument(
         "--max_instances",
@@ -479,9 +528,6 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is not set.")
-
     config = _load_config(args.config)
     oracle_cfg = config.get("gpt4_oracle", {})
     inputs_cfg = config.get("inputs", {})
@@ -493,6 +539,15 @@ def main() -> None:
 
     if not isinstance(inputs_cfg, dict):
         raise ValueError("inputs config must be a mapping.")
+
+    backend = _normalize_backend(judge_cfg.get("backend", "openai"))
+    if backend not in {"openai", "pairrm", "armorm"}:
+        raise ValueError(
+            f"Unsupported judge.backend={backend!r}. "
+            "Use one of: openai, pairrm, armorm."
+        )
+    if backend == "openai" and not os.getenv("OPENAI_API_KEY"):
+        raise RuntimeError("OPENAI_API_KEY is not set.")
 
     candidate_path_map = dict(inputs_cfg)
     cli_candidate_overrides = {
@@ -544,7 +599,8 @@ def main() -> None:
             "Remove or archive it first, or rerun with --resume to continue it."
         )
 
-    model_name = args.model or oracle_cfg.get("model", "gpt-4o-2024-08-06")
+    model_name = _resolve_model_name(backend, args.model, oracle_cfg, judge_cfg)
+    prompt_field = str(judge_cfg.get("prompt_field", "instruction"))
     temperature = oracle_cfg.get("temperature", 0.0)
     max_tokens = oracle_cfg.get("max_tokens", 256)
     seed = args.seed if args.seed is not None else oracle_cfg.get("seed", 42)
@@ -588,75 +644,103 @@ def main() -> None:
                 winner_key = row.get("winner_key") or row.get("winner")
                 _record_count(counts, winner_key)
 
-    client = OpenAI()
+    client = None
+    local_judge = None
+    if backend == "openai":
+        try:
+            from openai import OpenAI
+        except ImportError as exc:
+            raise RuntimeError("openai package is required for OpenAI judging.") from exc
+        client = OpenAI()
+    else:
+        local_judge = build_local_judge(backend, judge_cfg, model_name)
 
     results_path.parent.mkdir(parents=True, exist_ok=True)
     total = sum(counts.values())
 
     with results_path.open("a", encoding="utf-8") as out_f:
         for instruction in tqdm(instructions, desc="Judging", unit="examples"):
-            outputs = [
+            candidate_rows = [
                 (name, output_map[instruction]) for name, output_map in candidate_outputs
             ]
             instruction_seed = _seed_for_instruction(seed, instruction)
             rng = random.Random(instruction_seed)
-            rng.shuffle(outputs)
-            labels = ["A", "B", "C"][: len(outputs)]
+            shuffled_rows = list(candidate_rows)
+            rng.shuffle(shuffled_rows)
+            labels = ["A", "B", "C"][: len(shuffled_rows)]
             label_map = {
-                label: output_name for label, (output_name, _) in zip(labels, outputs)
+                label: output_name for label, (output_name, _) in zip(labels, shuffled_rows)
             }
             labeled_outputs = {
-                label: output_text for label, (_, output_text) in zip(labels, outputs)
+                label: row["output"] for label, (_, row) in zip(labels, shuffled_rows)
             }
             candidate_labeled_outputs = {
-                output_name: output_text for output_name, output_text in outputs
+                output_name: row["output"] for output_name, row in shuffled_rows
             }
 
             if instruction in seen:
                 continue
 
-            prompt = _build_prompt(prompt_template, instruction, labeled_outputs)
-            comparison, winner, content, usage = _judge_until_valid(
-                client=client,
-                prompt=prompt,
-                label_map=label_map,
-                prompt_template=prompt_template,
-                model=model_name,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                max_retries=max_retries,
-                initial_backoff=initial_backoff,
-                max_backoff=max_backoff,
-                decision_fields=decision_fields,
-                system_prompt=system_prompt,
-            )
+            prompt_text = _resolve_prompt_text(instruction, candidate_rows, prompt_field)
+            extra_fields: dict[str, Any] = {"judge_backend": backend}
+            if backend == "openai":
+                prompt = _build_prompt(prompt_template, prompt_text, labeled_outputs)
+                comparison, winner, content, usage = _judge_until_valid(
+                    client=client,
+                    prompt=prompt,
+                    label_map=label_map,
+                    prompt_template=prompt_template,
+                    model=model_name,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    max_retries=max_retries,
+                    initial_backoff=initial_backoff,
+                    max_backoff=max_backoff,
+                    decision_fields=decision_fields,
+                    system_prompt=system_prompt,
+                )
+            else:
+                result = local_judge.judge(prompt_text, labeled_outputs)
+                comparison = result.comparison
+                winner = result.winner_label
+                content = ""
+                usage = {}
+                extra_fields.update(
+                    {
+                        "scores": result.scores,
+                        "raw_backend_output": result.raw_backend_output,
+                        "prompt_field": prompt_field,
+                    }
+                )
+                if prompt_text != instruction:
+                    extra_fields["judge_prompt"] = prompt_text
 
             winner_key = label_map.get(winner, winner)
             _record_count(counts, winner_key)
             total += 1
 
+            record = {
+                "instruction": instruction,
+                "comparison": comparison,
+                "winner": winner,
+                "winner_key": winner_key,
+                "labels": label_map,
+                "outputs": labeled_outputs,
+                "candidate_outputs": candidate_labeled_outputs,
+                "model": model_name,
+                "raw_response": content,
+                "usage": usage,
+            }
+            record.update(extra_fields)
             out_f.write(
-                json.dumps(
-                    {
-                        "instruction": instruction,
-                        "comparison": comparison,
-                        "winner": winner,
-                        "winner_key": winner_key,
-                        "labels": label_map,
-                        "outputs": labeled_outputs,
-                        "candidate_outputs": candidate_labeled_outputs,
-                        "model": model_name,
-                        "raw_response": content,
-                        "usage": usage,
-                    },
-                    ensure_ascii=False,
-                )
+                json.dumps(record, ensure_ascii=False)
                 + "\n"
             )
             out_f.flush()
 
     summary = _summarize(counts, total)
     summary["model"] = model_name
+    summary["judge_backend"] = backend
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     with summary_path.open("w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=True, indent=2)

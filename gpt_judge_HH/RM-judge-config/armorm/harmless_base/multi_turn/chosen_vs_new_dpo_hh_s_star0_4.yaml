@@ -1,0 +1,19 @@
+inputs:
+  chosen: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_output_hh.json"
+  new_dpo_hh_s_star0_4: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star0.4-4xh200-batch-64-20260421-204233-multi.json"
+
+judge:
+  backend: armorm
+  model: "RLHFlow/ArmoRM-Llama3-8B-v0.1"
+  candidate_keys: ["chosen", "new_dpo_hh_s_star0_4"]
+  prompt_field: "instruction"
+  precision: "bf16"
+  device_map: "auto"
+  max_length: 4096
+  trust_remote_code: true
+  truncation: true
+  tie_epsilon: 0.0
+
+output:
+  results_file: "outputs/RMjudge/armorm/harmless_base/multi_turn/chosen_vs_new_dpo_hh_s_star0_4.jsonl"
+  summary_file: "outputs/RMjudge/armorm/harmless_base/multi_turn/chosen_vs_new_dpo_hh_s_star0_4_summary.json"
