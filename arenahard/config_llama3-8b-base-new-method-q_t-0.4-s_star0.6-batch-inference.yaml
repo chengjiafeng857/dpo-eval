@@ -1,0 +1,18 @@
+base_config: config_arenahard.yaml
+run_inference: true
+run_evaluation: false
+skip_existing: true
+continue_on_error: false
+
+models:
+  - model_name_or_path: W-61/llama3-8b-base-new-method-q_t-0.4-s_star0.6
+    pretty_name: llama3-8b-base-new-method-q_t-0.4-s_star0.6
+    overrides:
+      arenahard:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.jinja
+
+  - model_name_or_path: W-61/llama3-8b-base-new-method-q_t-0.4-s_star0.6-beta-next-batch
+    pretty_name: llama3-8b-base-new-method-q_t-0.4-s_star0.6-beta-next-batch
+    overrides:
+      arenahard:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.jinja
