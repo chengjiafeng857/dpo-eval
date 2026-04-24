@@ -5,6 +5,7 @@ Judge HH output files with OpenAI, PairRM, or ArmoRM using a shared output schem
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import os
@@ -142,6 +143,8 @@ DEFAULT_DECISION_FIELDS = [
     "more harmless",
 ]
 
+TIMESTAMP_SEGMENT_RE = re.compile(r"-\d{8}-\d{6}")
+
 
 def _normalize_field_name(value: str) -> str:
     return re.sub(r"[\s_-]+", " ", value.strip().lower())
@@ -168,6 +171,62 @@ def _decision_field_names(configured_fields: Any = None) -> list[str]:
             normalized.append(normalized_field)
             seen.add(normalized_field)
     return normalized
+
+
+def _normalize_path_for_match(path: Path) -> str:
+    return TIMESTAMP_SEGMENT_RE.sub("", path.as_posix())
+
+
+def _candidate_file_suggestions(path: Path, limit: int = 3) -> list[Path]:
+    search_roots: list[Path] = []
+    for parent in path.parents:
+        if parent.exists() and parent.is_dir():
+            search_roots.append(parent)
+            break
+
+    outputs_root = Path("outputs")
+    if outputs_root.exists() and outputs_root.is_dir() and outputs_root not in search_roots:
+        search_roots.append(outputs_root)
+
+    target = _normalize_path_for_match(path)
+    ranked: list[tuple[float, Path]] = []
+    seen: set[Path] = set()
+
+    for root in search_roots:
+        for candidate in root.rglob("*.json"):
+            if candidate in seen:
+                continue
+            seen.add(candidate)
+            normalized_candidate = _normalize_path_for_match(candidate)
+            score = difflib.SequenceMatcher(
+                None, target, normalized_candidate
+            ).ratio()
+            if path.name == candidate.name:
+                score += 0.25
+            elif path.stem == candidate.stem:
+                score += 0.15
+            if score >= 0.55:
+                ranked.append((score, candidate))
+
+    ranked.sort(key=lambda item: (-item[0], item[1].as_posix()))
+    return [candidate for _, candidate in ranked[:limit]]
+
+
+def _resolve_input_path(candidate_name: str, value: str) -> Path:
+    path = Path(value)
+    if path.exists() and path.is_file():
+        return path
+    if path.exists() and not path.is_file():
+        raise FileNotFoundError(
+            f"Input {candidate_name!r} points to a non-file path: {path}"
+        )
+
+    suggestions = _candidate_file_suggestions(path)
+    message = [f"Input {candidate_name!r} does not exist: {path}"]
+    if suggestions:
+        message.append("Nearby JSON files:")
+        message.extend(f"  - {suggestion}" for suggestion in suggestions)
+    raise FileNotFoundError("\n".join(message))
 
 
 def _parse_response(
@@ -570,7 +629,12 @@ def main() -> None:
         raise ValueError("judge.candidate_keys must be a list of strings.")
 
     selected_candidates = [
-        (candidate_key, _expand_path_value(candidate_path_map.get(candidate_key)))
+        (
+            candidate_key,
+            _resolve_input_path(
+                candidate_key, _expand_path_value(candidate_path_map.get(candidate_key))
+            ),
+        )
         for candidate_key in candidate_keys
         if candidate_path_map.get(candidate_key)
     ]
@@ -616,9 +680,7 @@ def main() -> None:
         else oracle_cfg.get("max_examples")
     )
 
-    candidate_outputs = [
-        (name, _load_outputs(Path(path))) for name, path in selected_candidates
-    ]
+    candidate_outputs = [(name, _load_outputs(path)) for name, path in selected_candidates]
 
     instructions = _intersection_keys(*[output_map for _, output_map in candidate_outputs])
     if max_examples is not None:

@@ -6,7 +6,7 @@ dataset:
   max_instances: null
 
 models:
-  dpo: "W-61/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621"
+  dpo: "W-61/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851"
 
 generation:
   model_key: "dpo"
@@ -31,7 +31,7 @@ generation:
   trust_remote_code: false
 
 inputs:
-  dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621-multi/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621-multi.json"
+  dpo: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851-multi/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851-multi.json"
   chosen: "outputs/gpt_judge_HH/harmless_base/multi_turn/chosen_output_hh.json"
 
 gpt4_oracle:
@@ -62,8 +62,8 @@ gpt4_oracle:
     Winner: <"A" or "B">
 
 output:
-  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621-multi/prompts-general/gpt-4.1/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621.jsonl"
-  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621-multi/prompts-general/gpt-4.1/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260422-051621_summary.json"
+  results_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851-multi/prompts-general/gpt-4.1/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851.jsonl"
+  summary_file: "outputs/gpt_judge_HH/harmless_base/multi_turn/llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851-multi/prompts-general/gpt-4.1/chosen_vs_llama-3-8b-base-new-dpo-hh-harmless-s_star1.0-4xh200-batch-64-20260421-213851_summary.json"
 
 judge:
   candidate_keys:

@@ -199,6 +199,58 @@ class RMJudgeTests(unittest.TestCase):
             judge_outputs_gpt4o.build_local_judge = original_builder
             sys.argv = original_argv
 
+    def test_hh_judge_cli_reports_missing_candidate_input(self) -> None:
+        original_argv = sys.argv
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp_path = Path(tmp)
+                chosen_path = tmp_path / "chosen.json"
+                actual_model_path = tmp_path / "llama-3-8b-base-new-dpo-hh-harmless-s_star0.6-4xh200-batch-64-20260421-213851-multi.json"
+                missing_model_path = tmp_path / "llama-3-8b-base-new-dpo-hh-harmless-s_star0.6-4xh200-batch-64-20260422-051621-multi.json"
+                results_path = tmp_path / "results.jsonl"
+                summary_path = tmp_path / "summary.json"
+                config_path = tmp_path / "config.yaml"
+
+                chosen_path.write_text(
+                    json.dumps([{"instruction": "prompt", "output": "chosen"}]),
+                    encoding="utf-8",
+                )
+                actual_model_path.write_text(
+                    json.dumps([{"instruction": "prompt", "output": "model"}]),
+                    encoding="utf-8",
+                )
+                config_path.write_text(
+                    yaml.safe_dump(
+                        {
+                            "inputs": {
+                                "chosen": str(chosen_path),
+                                "beta_dpo": str(missing_model_path),
+                            },
+                            "judge": {
+                                "backend": "pairrm",
+                                "model": "mock-model",
+                                "candidate_keys": ["chosen", "beta_dpo"],
+                            },
+                            "output": {
+                                "results_file": str(results_path),
+                                "summary_file": str(summary_path),
+                            },
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+
+                sys.argv = ["hh-judge", "--config", str(config_path)]
+                with self.assertRaises(FileNotFoundError) as exc:
+                    judge_outputs_gpt4o.main()
+
+                message = str(exc.exception)
+                self.assertIn("beta_dpo", message)
+                self.assertIn(str(missing_model_path), message)
+                self.assertIn(str(actual_model_path), message)
+        finally:
+            sys.argv = original_argv
+
 
 if __name__ == "__main__":
     unittest.main()
