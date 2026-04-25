@@ -16,7 +16,7 @@ alpacaeval:
   annotators_config: weighted_alpaca_eval_gpt4_turbo_new
   evaluation_mode: outputs
   generation:
-    batch_size: 128
+    batch_size: 900
     do_sample: true
     max_new_tokens: 4096
     stop_token_ids:
