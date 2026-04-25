@@ -25,6 +25,7 @@ from .alpacaeval_common import (
     get_output_dir,
     get_package_versions,
     get_pretty_name,
+    get_tokenizer_name_or_path,
     load_prompt_template,
     render_prompt,
     sanitize_name,
@@ -74,7 +75,7 @@ def _generate_with_vllm(
 
     llm_kwargs: Dict[str, Any] = {
         "model": get_model_name_or_path(config),
-        "tokenizer": _prepare_tokenizer_path(get_model_name_or_path(config)),
+        "tokenizer": _prepare_tokenizer_path(get_tokenizer_name_or_path(config)),
         "tensor_parallel_size": int(vllm_cfg.get("tensor_parallel_size", 1)),
         "trust_remote_code": bool(vllm_cfg.get("trust_remote_code", False)),
     }
@@ -125,6 +126,13 @@ def _load_tokenizer(
         )
     except ValueError as exc:
         if "Tokenizer class TokenizersBackend does not exist" not in str(exc):
+            raise
+        return AutoTokenizer.from_pretrained(
+            _prepare_tokenizer_path(model_name_or_path),
+            **tokenizer_kwargs,
+        )
+    except TypeError as exc:
+        if "not a string" not in str(exc):
             raise
         return AutoTokenizer.from_pretrained(
             _prepare_tokenizer_path(model_name_or_path),
@@ -217,9 +225,10 @@ def _generate_with_transformers(
         raise ValueError("alpacaeval.transformers must be a mapping.")
 
     model_name_or_path = get_model_name_or_path(config)
+    tokenizer_name_or_path = get_tokenizer_name_or_path(config)
     trust_remote_code = bool(transformers_cfg.get("trust_remote_code", False))
     tokenizer = _load_tokenizer(
-        model_name_or_path,
+        tokenizer_name_or_path,
         trust_remote_code=trust_remote_code,
     )
     if tokenizer.pad_token_id is None:
@@ -297,7 +306,7 @@ def _render_prompts(
         raise ValueError("alpacaeval.transformers must be a mapping.")
 
     tokenizer = _load_tokenizer(
-        get_model_name_or_path(config),
+        get_tokenizer_name_or_path(config),
         trust_remote_code=bool(transformers_cfg.get("trust_remote_code", False)),
     )
     if (
@@ -421,6 +430,7 @@ def run_alpacaeval_inference(config: Dict[str, Any]) -> Path:
         metadata_path,
         {
             "model_name_or_path": get_model_name_or_path(config),
+            "tokenizer_name_or_path": get_tokenizer_name_or_path(config),
             "pretty_name": generator_name,
             "backend": backend,
             "prompt_template": prompt_template_ref,

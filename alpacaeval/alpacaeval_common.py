@@ -31,6 +31,14 @@ def get_model_name_or_path(config: Dict[str, Any]) -> str:
     return os.path.expanduser(os.path.expandvars(str(model_name)))
 
 
+def get_tokenizer_name_or_path(config: Dict[str, Any]) -> str:
+    alpacaeval_cfg = get_alpacaeval_config(config)
+    tokenizer_name = alpacaeval_cfg.get("tokenizer_name_or_path") or get_model_name_or_path(
+        config
+    )
+    return os.path.expanduser(os.path.expandvars(str(tokenizer_name)))
+
+
 def get_pretty_name(config: Dict[str, Any]) -> str:
     alpacaeval_cfg = get_alpacaeval_config(config)
     pretty_name = alpacaeval_cfg.get("pretty_name") or get_model_name_or_path(config)
