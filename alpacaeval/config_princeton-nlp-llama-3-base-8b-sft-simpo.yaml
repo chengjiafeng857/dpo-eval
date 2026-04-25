@@ -4,10 +4,10 @@ precision: bf16
 alpacaeval:
   pretty_name: Llama-3-Base-8B-SFT-SimPO
   model_name_or_path: princeton-nlp/Llama-3-Base-8B-SFT-SimPO
-  tokenizer_name_or_path: meta-llama/Meta-Llama-3-8B-Instruct
+  tokenizer_name_or_path: meta-llama/Meta-Llama-3-8B
   backend: vllm
   simpo_compat: true
-  use_custom_chat_template: false
+  use_custom_chat_template: alpacaeval/templates/llama3.txt
   output_dir: ../outputs/alpacaeval/Llama-3-Base-8B-SFT-SimPO
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval
