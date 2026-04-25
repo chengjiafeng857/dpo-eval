@@ -253,7 +253,7 @@ def _generate_with_transformers(
         "pad_token_id": tokenizer.pad_token_id,
     }
     if do_sample:
-        generate_kwargs["temperature"] = float(generation_cfg.get("temperature", 1.0))
+        generate_kwargs["temperature"] = float(generation_cfg.get("temperature", 0.9))
         generate_kwargs["top_p"] = float(generation_cfg.get("top_p", 1.0))
     stop_token_ids = generation_cfg.get("stop_token_ids")
     if stop_token_ids:
