@@ -26,6 +26,7 @@ dependencies = [
 alpacaeval-infer = "alpacaeval.alpacaeval_infer:main"
 alpacaeval-eval = "alpacaeval.alpacaeval_eval:main"
 alpacaeval-batch = "alpacaeval.batch_runner:main"
+alpacaeval-native = "alpacaeval.native_alpacaeval:main"
 arenahard-infer = "arenahard.arenahard_infer:main"
 arenahard-eval = "arenahard.arenahard_eval:main"
 arenahard-batch = "arenahard.batch_runner:main"
