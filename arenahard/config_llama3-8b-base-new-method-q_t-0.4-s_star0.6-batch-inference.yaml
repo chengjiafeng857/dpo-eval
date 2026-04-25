@@ -1,6 +1,6 @@
 base_config: config_arenahard.yaml
-run_inference: true
-run_evaluation: false
+run_inference: false
+run_evaluation: true
 skip_existing: true
 continue_on_error: false
 
