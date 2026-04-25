@@ -89,11 +89,7 @@ def _generate_with_vllm(
 
     sampling_kwargs: Dict[str, Any] = {
         "max_tokens": int(generation_cfg.get("max_new_tokens", 1024)),
-        "temperature": (
-            float(generation_cfg.get("temperature", 0.9))
-            if bool(generation_cfg.get("do_sample", False))
-            else 0.0
-        ),
+        "temperature": float(generation_cfg.get("temperature", 0.9)),
         "top_p": float(generation_cfg.get("top_p", 1.0)),
     }
     stop_token_ids = generation_cfg.get("stop_token_ids")
@@ -101,8 +97,16 @@ def _generate_with_vllm(
         sampling_kwargs["stop_token_ids"] = [int(token_id) for token_id in stop_token_ids]
 
     llm = LLM(**llm_kwargs)
-    outputs = llm.generate(prompts, SamplingParams(**sampling_kwargs))
-    return [result.outputs[0].text if result.outputs else "" for result in outputs]
+    sampling_params = SamplingParams(**sampling_kwargs)
+    if bool(generation_cfg.get("do_sample", False)):
+        sampling_params.use_beam_search = True
+
+    batch_size = int(generation_cfg.get("batch_size", 1))
+    generations: list[str] = []
+    for prompt_batch in _iter_batches(prompts, batch_size):
+        outputs = llm.generate(list(prompt_batch), sampling_params)
+        generations.extend(result.outputs[0].text if result.outputs else "" for result in outputs)
+    return generations
 
 
 def _load_tokenizer(
@@ -231,6 +235,7 @@ def _generate_with_transformers(
         tokenizer_name_or_path,
         trust_remote_code=trust_remote_code,
     )
+    tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -419,7 +424,7 @@ def run_alpacaeval_inference(config: Dict[str, Any]) -> Path:
         raise ValueError("alpacaeval.backend must be 'transformers' or 'vllm'.")
 
     for sample, output_text in zip(outputs_payload, generations, strict=True):
-        sample["output"] = output_text
+        sample["output"] = output_text.strip()
 
     output_dir = get_output_dir(config)
     model_outputs_path = output_dir / "model_outputs.json"
