@@ -1,0 +1,83 @@
+base_config: config_arenahard.yaml
+run_inference: true
+run_evaluation: true
+skip_existing: true
+continue_on_error: false
+
+models:
+  - pretty_name: llama-3-8b-base-ipo-ultrafeedback-8xh200
+    model_endpoint:
+      model: llama-3-8b-base-ipo-ultrafeedback-8xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8000/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
+
+  - pretty_name: llama-3-8b-base-cpo-ultrafeedback-8xh200
+    model_endpoint:
+      model: llama-3-8b-base-cpo-ultrafeedback-8xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8001/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
+
+  - pretty_name: llama-3-8b-base-orpo-ultrafeedback-8xh200
+    model_endpoint:
+      model: llama-3-8b-base-orpo-ultrafeedback-8xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8002/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
+
+  - pretty_name: llama-3-8b-base-kto-ultrafeedback-8xh200
+    model_endpoint:
+      model: llama-3-8b-base-kto-ultrafeedback-8xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8003/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
+
+  - pretty_name: llama-3-8b-base-slic-hf-ultrafeedback-4xh200
+    model_endpoint:
+      model: llama-3-8b-base-slic-hf-ultrafeedback-4xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8004/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
+
+  - pretty_name: llama-3-8b-base-simpo-8xh200
+    model_endpoint:
+      model: llama-3-8b-base-simpo-8xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8005/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
+
+  - pretty_name: llama-3-8b-base-r-dpo-ultrafeedback-4xh200
+    model_endpoint:
+      model: llama-3-8b-base-r-dpo-ultrafeedback-4xh200
+      endpoints:
+        - api_base: http://0.0.0.0:8006/v1
+          api_key: "-"
+      api_type: openai
+      parallel: 128
+      max_tokens: 8192
+      temperature: 0.0
