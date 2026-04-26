@@ -38,12 +38,18 @@ fi
 
 
 configs=(
-  "gpt_judge_HH/config/harmless_base/multi-turn/prompts-harmless/gpt-4/config_eval_HH_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260423-234249.yaml"
-  "gpt_judge_HH/config/helpful_base/multi-turn/prompts-helpful/gpt-4/config_eval_HH_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260423-233948.yaml"
-  "gpt_judge_HH/config/harmless_base/multi-turn/prompts-harmless/gpt-4/config_eval_HH_qwen3-8b-base-beta-dpo-hh-harmless-4xh200-batch-64-20260424-025105.yaml"
-  "gpt_judge_HH/config/helpful_base/multi-turn/prompts-helpful/gpt-4/config_eval_HH_qwen3-8b-base-beta-dpo-hh-helpful-4xh200-batch-64-20260424-013732.yaml"
-  "gpt_judge_HH/config/helpful_base/multi-turn/prompts-helpful/gpt-4/config_eval_HH_qwen3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260424-040306.yaml"
-  "gpt_judge_HH/config/harmless_base/multi-turn/prompts-harmless/gpt-4/config_eval_HH_qwen3-8b-base-epsilon-dpo-hh-harmless-4xh200-batch-64-20260424-040415.yaml"
+  "gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260423-234249.yaml"
+  "gpt_judge_HH/config/harmless_base/multi-turn/config_eval_HH_qwen3-8b-base-margin-dpo-hh-harmless-4xh200-batch-64-20260423-234249.yaml"
+  "gpt_judge_HH/config/helpful_base/single-turn/config_eval_HH_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260423-233948.yaml"
+  "gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_qwen3-8b-base-margin-dpo-hh-helpful-4xh200-batch-64-20260423-233948.yaml"
+  "gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH_qwen3-8b-base-beta-dpo-hh-harmless-4xh200-batch-64-20260424-025105.yaml"
+  "gpt_judge_HH/config/harmless_base/multi-turn/config_eval_HH_qwen3-8b-base-beta-dpo-hh-harmless-4xh200-batch-64-20260424-025105.yaml"
+  "gpt_judge_HH/config/helpful_base/single-turn/config_eval_HH_qwen3-8b-base-beta-dpo-hh-helpful-4xh200-batch-64-20260424-013732.yaml"
+  "gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_qwen3-8b-base-beta-dpo-hh-helpful-4xh200-batch-64-20260424-013732.yaml"
+  "gpt_judge_HH/config/helpful_base/single-turn/config_eval_HH_qwen3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260424-040306.yaml"
+  "gpt_judge_HH/config/helpful_base/multi-turn/config_eval_HH_qwen3-8b-base-epsilon-dpo-hh-helpful-4xh200-batch-64-20260424-040306.yaml"
+  "gpt_judge_HH/config/harmless_base/single-turn/config_eval_HH_qwen3-8b-base-epsilon-dpo-hh-harmless-4xh200-batch-64-20260424-040415.yaml"
+  "gpt_judge_HH/config/harmless_base/multi-turn/config_eval_HH_qwen3-8b-base-epsilon-dpo-hh-harmless-4xh200-batch-64-20260424-040415.yaml"
 )
 
 for cfg in "${configs[@]}"; do
