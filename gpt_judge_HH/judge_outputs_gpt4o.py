@@ -312,6 +312,7 @@ def _judge_until_valid(
     initial_backoff: float,
     max_backoff: float,
     system_prompt: str | None = None,
+    on_invalid_winner: str = "error",
 ) -> tuple[str | None, str, str, dict[str, Any]]:
     attempts = 0
     backoff = initial_backoff
@@ -346,7 +347,15 @@ def _judge_until_valid(
         time.sleep(backoff)
         backoff = min(backoff * 2, max_backoff)
 
-    return last_comparison, "Error", last_content, last_usage
+    valid_labels = ", ".join(label_map)
+    if on_invalid_winner == "tie":
+        return last_comparison, "TIE", last_content, last_usage
+    raise RuntimeError(
+        "Judge returned no valid winner after "
+        f"{max_retries} retries; expected one of {valid_labels}. "
+        f"Last parsed winner={last_winner!r}, comparison={last_comparison!r}, "
+        f"raw_response={last_content!r}, usage={last_usage!r}"
+    )
 
 
 def main() -> None:
@@ -432,6 +441,15 @@ def main() -> None:
         action="store_true",
         help="Skip instructions already present in the results file.",
     )
+    parser.add_argument(
+        "--on_invalid_winner",
+        choices=("error", "tie"),
+        default=None,
+        help=(
+            "How to handle judge outputs that never produce a valid winner after retries. "
+            "'error' aborts the run; 'tie' records the example as a tie."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -508,6 +526,7 @@ def main() -> None:
     initial_backoff = oracle_cfg.get("initial_backoff", 1.0)
     max_backoff = oracle_cfg.get("max_backoff", 60.0)
     system_prompt = oracle_cfg.get("system_prompt")
+    on_invalid_winner = args.on_invalid_winner or oracle_cfg.get("on_invalid_winner", "error")
 
     max_examples = (
         args.max_examples
@@ -583,6 +602,7 @@ def main() -> None:
                 initial_backoff=initial_backoff,
                 max_backoff=max_backoff,
                 system_prompt=system_prompt,
+                on_invalid_winner=on_invalid_winner,
             )
 
             winner_key = label_map.get(winner, winner)

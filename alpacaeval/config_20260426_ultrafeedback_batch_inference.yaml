@@ -1,0 +1,73 @@
+base_config: config_alpacaeval.yaml
+run_inference: false
+run_evaluation: true
+skip_existing: true
+continue_on_error: false
+use_model_configs: false
+
+overrides:
+  alpacaeval:
+    backend: vllm
+    simpo_compat: false
+    generation:
+      batch_size: 128
+      do_sample: true
+      max_new_tokens: 4096
+      temperature: 0.9
+      top_p: 1.0
+    vllm:
+      tensor_parallel_size: 1
+      trust_remote_code: false
+      gpu_memory_utilization: 0.9
+
+models:
+  - model_name_or_path: W-61/llama3-8b-base-new-method-s_star0.6-20260426-230653
+    pretty_name: llama3-8b-base-new-method-s_star0.6-20260426-230653
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.4-20260425-111846
+    pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.4-20260425-111846
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.2-20260426-185938
+    pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.2-20260426-185938
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.2-20260425-111846
+    pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.2-20260425-111846
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/qwen3-8b-base-kto-ultrafeedback-4xh200-batch-128-20260426-105614
+    pretty_name: qwen3-8b-base-kto-ultrafeedback-4xh200-batch-128-20260426-105614
+
+  - model_name_or_path: W-61/llama-3-8b-base-orpo-ultrafeedback-4xh200-batch-128-20260426-105614
+    pretty_name: llama-3-8b-base-orpo-ultrafeedback-4xh200-batch-128-20260426-105614
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.txt
+
+  - model_name_or_path: W-61/llama-3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260426-105614
+    pretty_name: llama-3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260426-105614
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.txt
+
+  - model_name_or_path: W-61/qwen3-8b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260423-040315
+    pretty_name: qwen3-8b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260423-040315
+
+  - model_name_or_path: W-61/llama-3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260424-044124
+    pretty_name: llama-3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260424-044124
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/qwen3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260423-040315
+    pretty_name: qwen3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260423-040315

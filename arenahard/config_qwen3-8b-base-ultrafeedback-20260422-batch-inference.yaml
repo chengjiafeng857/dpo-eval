@@ -1,0 +1,21 @@
+base_config: config_arenahard.yaml
+run_inference: true
+run_evaluation: false
+skip_existing: true
+continue_on_error: false
+
+models:
+  - model_name_or_path: W-61/qwen3-8b-base-slic-hf-ultrafeedback-4xh200-batch-128-20260422-131855
+    pretty_name: qwen3-8b-base-slic-hf-ultrafeedback-4xh200-batch-128-20260422-131855
+
+  - model_name_or_path: W-61/qwen3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260422-131855
+    pretty_name: qwen3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260422-131855
+
+  - model_name_or_path: W-61/qwen3-8b-base-epsilon-dpo-ultrafeedback-4xh200-batch-128-20260422-131855
+    pretty_name: qwen3-8b-base-epsilon-dpo-ultrafeedback-4xh200-batch-128-20260422-131855
+
+  - model_name_or_path: W-61/qwen3-8b-base-cpo-ultrafeedback-4xh200-batch-128-20260422-131855
+    pretty_name: qwen3-8b-base-cpo-ultrafeedback-4xh200-batch-128-20260422-131855
+
+  - model_name_or_path: W-61/qwen3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260422-131855
+    pretty_name: qwen3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260422-131855
