@@ -1,14 +1,14 @@
-policy_name: jackf857/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.5
+policy_name: jackf857/llama-3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260428-035521
 precision: bf16
 
 alpacaeval:
-  pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.5
-  model_name_or_path: jackf857/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.5
+  pretty_name: llama-3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260428-035521
+  model_name_or_path: jackf857/llama-3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260428-035521
   backend: vllm
   simpo_compat: false
   use_custom_chat_template: true
   prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.txt
-  output_dir: ../outputs/alpacaeval/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.5
+  output_dir: ../outputs/alpacaeval/llama-3-8b-base-r-dpo-ultrafeedback-4xh200-batch-128-20260428-035521
   dataset_name: tatsu-lab/alpaca_eval
   dataset_config: alpaca_eval
   dataset_split: eval

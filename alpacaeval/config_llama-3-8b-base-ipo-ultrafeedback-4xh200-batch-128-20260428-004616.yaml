@@ -1,0 +1,32 @@
+policy_name: jackf857/llama-3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260428-004616
+precision: bf16
+
+alpacaeval:
+  pretty_name: llama-3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260428-004616
+  model_name_or_path: jackf857/llama-3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260428-004616
+  backend: vllm
+  simpo_compat: false
+  use_custom_chat_template: true
+  prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.txt
+  output_dir: ../outputs/alpacaeval/llama-3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260428-004616
+  dataset_name: tatsu-lab/alpaca_eval
+  dataset_config: alpaca_eval
+  dataset_split: eval
+  annotators_config: weighted_alpaca_eval_gpt4_turbo_new
+  evaluation_mode: outputs
+  generation:
+    batch_size: 128
+    do_sample: true
+    max_new_tokens: 4096
+    stop_token_ids:
+      - 128001
+      - 128009
+    temperature: 0.9
+    top_p: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    trust_remote_code: false
+    gpu_memory_utilization: 0.9
+  transformers:
+    device: cuda
+    trust_remote_code: false
