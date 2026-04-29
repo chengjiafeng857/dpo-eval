@@ -1,0 +1,34 @@
+base_config: config_alpacaeval.yaml
+run_inference: true
+run_evaluation: false
+skip_existing: true
+continue_on_error: false
+use_model_configs: false
+
+overrides:
+  alpacaeval:
+    backend: vllm
+    simpo_compat: false
+    generation:
+      batch_size: 128
+      do_sample: true
+      max_new_tokens: 4096
+      temperature: 0.9
+      top_p: 1.0
+    vllm:
+      tensor_parallel_size: 1
+      trust_remote_code: false
+      gpu_memory_utilization: 0.9
+
+models:
+  - model_name_or_path: W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.35-20260428-045924
+    pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.35-20260428-045924
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.3-20260428-045924
+    pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.3-20260428-045924
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
