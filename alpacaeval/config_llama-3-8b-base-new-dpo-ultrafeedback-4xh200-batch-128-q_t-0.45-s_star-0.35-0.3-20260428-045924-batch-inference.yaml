@@ -38,3 +38,9 @@ models:
     overrides:
       alpacaeval:
         prompt_template: templates/ultrafeedback-llama3-8b-beta-dpo.txt
+
+  - model_name_or_path: W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_star-0.5-20260425-111846
+    pretty_name: llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_star-0.5-20260425-111846
+    overrides:
+      alpacaeval:
+        prompt_template: templates/ultrafeedback-llama3-8b-margin-dpo.txt

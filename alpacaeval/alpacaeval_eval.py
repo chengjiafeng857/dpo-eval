@@ -119,6 +119,16 @@ def _resolve_model_outputs_path(
     model_outputs_path: str | None,
 ) -> Path:
     if model_outputs_path is not None:
+        explicit_path = Path(str(model_outputs_path)).expanduser()
+        if explicit_path.is_absolute():
+            return explicit_path.resolve()
+
+        # CLI-provided paths should behave like normal shell paths first.
+        cwd_resolved = (Path.cwd() / explicit_path).resolve()
+        if cwd_resolved.exists():
+            return cwd_resolved
+
+        # Fall back to config-relative resolution for older checked-in configs.
         return resolve_path(config, model_outputs_path)
 
     default_path = get_output_dir(config) / "model_outputs.json"
