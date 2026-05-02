@@ -1,0 +1,53 @@
+base_config: config_alpacaeval.yaml
+run_inference: true
+run_evaluation: false
+skip_existing: true
+continue_on_error: false
+use_model_configs: false
+
+overrides:
+  alpacaeval:
+    simpo_compat: false
+
+models:
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.3-20260501-004905
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.3-20260501-004905
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.35-20260430-140517
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.35-20260430-140517
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.45-20260430-140517
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.45-20260430-140517
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.5-20260430-140517
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.5-20260430-140517
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.6
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.4-s_star-0.6
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.3-20260430-192039
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.3-20260430-192039
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.35-20260430-192039
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.35-20260430-192039
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.4-20260429-230725
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.4-20260429-230725
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.45-20260501-025306
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.45-20260501-025306
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.3-20260430-143919
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.3-20260430-143919
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.35-20260430-143919
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.35-20260430-143919
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.45-20260430-143919
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.45-20260430-143919
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.5-20260430-194457
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.5-20260430-194457
+
+  - model_name_or_path: W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.6-20260430-165125
+    pretty_name: qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.6-20260430-165125
