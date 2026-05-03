@@ -19,14 +19,19 @@ cd "$REPO_ROOT"
 : "${OUTPUT_ROOT:=results/eval/openllm_v1/qwen3_8b}"
 
 if [[ -z "${CHECKPOINTS:-}" ]]; then
-  # Pick the q_t=0.45 / s_star=0.45 new-dpo run as the canonical "our_method"
-  # representative; swap to whichever sweep point you're publishing.
   CHECKPOINTS="\
 sft=jackf857/qwen3-8b-base-sft-ultrachat-4xh200-batch-128 \
-beta_dpo=W-61/ultrafeedback-qwen3-8b-beta-dpo \
-epsilon_dpo=jackf857/Qwen3-8b-ultrafeedback-binarized-e-dpo \
-margin_dpo=W-61/ultrafeedback-qwen3-8b-margin-dpo \
-our_method=jackf857/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.4"
+margin_dpo=W-61/qwen3-8b-base-margin-dpo-ultrafeedback-4xh200-batch-128-20260423-040315 \
+beta_dpo=W-61/qwen3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260423-040315 \
+epsilon_dpo=W-61/qwen3-8b-base-epsilon-dpo-ultrafeedback-4xh200-batch-128-20260422-131855 \
+ipo=W-61/qwen3-8b-base-ipo-ultrafeedback-4xh200-batch-128-20260422-131855 \
+cpo=W-61/qwen3-8b-base-cpo-ultrafeedback-4xh200-batch-128-20260422-131855 \
+kto=jackf857/qwen3-8b-base-kto-ultrafeedback-4xH200-batch-128 \
+orpo=jackf857/qwen3-8b-base-orpo-ultrafeedback-4xh200-batch-128 \
+slic_hf=W-61/qwen3-8b-base-slic-hf-ultrafeedback-4xh200-batch-128-20260422-131855 \
+r_dpo=jackf857/qwen-3-8b-base-r-dpo-ultrafeedback-4xH200-batch-128-rerun-2-runpod \
+simpo=jackf857/qwen3-8b-base-simpo-ultrafeedback-4xH200-batch-128 \
+our_method=W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.4-20260429-230725"
 fi
 
 DEFAULTS=(

@@ -1,5 +1,5 @@
 {
-  "model_path": "W-61/llama-3-8b-base-beta-dpo-ultrafeedback-8xh200",
+  "model_path": "W-61/llama-3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260424-044124",
   "backend": "vllm",
   "dtype": "auto",
   "batch_size": "auto",
@@ -21,7 +21,7 @@
     "--model",
     "vllm",
     "--model_args",
-    "pretrained=W-61/llama-3-8b-base-beta-dpo-ultrafeedback-8xh200,tensor_parallel_size=4,dtype=auto,gpu_memory_utilization=0.85,max_model_len=4096,trust_remote_code=True",
+    "pretrained=W-61/llama-3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260424-044124,tensor_parallel_size=4,dtype=auto,gpu_memory_utilization=0.85,max_model_len=4096,trust_remote_code=True",
     "--tasks",
     "openllm_v1",
     "--batch_size",
@@ -34,5 +34,5 @@
     "--include_path",
     "/Users/feng/Github/dpo-eval/openllm/tasks"
   ],
-  "started_at": "2026-05-03T19:14:29-0400"
+  "started_at": "2026-05-03T19:22:23-0400"
 }

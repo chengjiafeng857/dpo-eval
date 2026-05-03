@@ -1,5 +1,5 @@
 {
-  "model_path": "W-61/llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200",
+  "model_path": "jackf857/qwen3-8b-base-orpo-ultrafeedback-4xh200-batch-128",
   "backend": "vllm",
   "dtype": "auto",
   "batch_size": "auto",
@@ -21,18 +21,18 @@
     "--model",
     "vllm",
     "--model_args",
-    "pretrained=W-61/llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200,tensor_parallel_size=4,dtype=auto,gpu_memory_utilization=0.85,max_model_len=4096,trust_remote_code=True",
+    "pretrained=jackf857/qwen3-8b-base-orpo-ultrafeedback-4xh200-batch-128,tensor_parallel_size=4,dtype=auto,gpu_memory_utilization=0.85,max_model_len=4096,trust_remote_code=True",
     "--tasks",
     "openllm_v1",
     "--batch_size",
     "auto",
     "--output_path",
-    "/Users/feng/Github/dpo-eval/results/eval/openllm_v1/llama3_8b/epsilon_dpo",
+    "/Users/feng/Github/dpo-eval/results/eval/openllm_v1/qwen3_8b/orpo",
     "--seed",
     "1234",
     "--log_samples",
     "--include_path",
     "/Users/feng/Github/dpo-eval/openllm/tasks"
   ],
-  "started_at": "2026-05-03T19:22:23-0400"
+  "started_at": "2026-05-03T19:22:25-0400"
 }

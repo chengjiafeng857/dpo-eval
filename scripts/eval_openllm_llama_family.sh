@@ -23,11 +23,17 @@ cd "$REPO_ROOT"
 if [[ -z "${CHECKPOINTS:-}" ]]; then
   CHECKPOINTS="\
 sft=W-61/llama-3-8b-base-sft-ultrachat-8xh200 \
-dpo=princeton-nlp/Llama-3-Base-8B-SFT-DPO \
-beta_dpo=W-61/llama-3-8b-base-beta-dpo-ultrafeedback-8xh200 \
-epsilon_dpo=W-61/llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200 \
 margin_dpo=W-61/llama-3-8b-base-margin-dpo-ultrafeedback-8xh200 \
-our_method=W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.45-s_star-0.45-20260427-221551"
+beta_dpo=W-61/llama-3-8b-base-beta-dpo-ultrafeedback-4xh200-batch-128-20260424-044124 \
+epsilon_dpo=W-61/llama-3-8b-base-epsilon-dpo-ultrafeedback-8xh200 \
+ipo=jackf857/llama-3-8b-base-ipo-ultrafeedback-4xh200-batch-128-rerun \
+cpo=jackf857/llama-3-8b-base-cpo-ultrafeedback-4xH200-batch-128-rerun \
+kto=jackf857/llama-3-8b-base-kto-ultrafeedback-4xh200-batch-128-20260427-194056 \
+orpo=jackf857/llama-3-8b-base-orpo-ultrafeedback-4xh200-rerun \
+slic_hf=jackf857/llama-3-8b-base-slic-hf-ultrafeedback-4xh200-batch-128-20260428-054623 \
+r_dpo=jackf857/llama-3-8b-base-r-dpo-ultrafeedback-4xH200-batch-128-rerun-2-runpod \
+simpo=jackf857/llama-3-8b-base-simpo-8xh200 \
+our_method=W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-s_star-0.4-20260425-111846"
 fi
 
 # Default eval flags. All flags after the script name override / extend these.
