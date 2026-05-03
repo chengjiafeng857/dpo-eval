@@ -6,6 +6,9 @@ This repo keeps benchmark wrappers at the repo root:
 - `arenahard/`: Arena-Hard local generation plus external judge wrapper.
 - `gpt_judge_HH/`: Anthropic HH generation plus GPT-4o judging.
 - `mtbench/`: MT-Bench wrapper around FastChat's original framework.
+- `openllm/`: Open LLM Leaderboard v1 (MMLU / ARC-C / HellaSwag / TruthfulQA /
+  WinoGrande / GSM8K) via EleutherAI lm-evaluation-harness. See
+  [`openllm/README.md`](openllm/README.md) and `scripts/eval_openllm.sh`.
 
 Installed entrypoints:
 
