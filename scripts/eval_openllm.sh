@@ -62,9 +62,23 @@ fi
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# Allow the caller to override which Python is used.
-PYTHON_BIN="${PYTHON_BIN:-python}"
+# Allow the caller to override which Python is used. When not overridden,
+# prefer `uv run python` so direct `bash scripts/...` invocations still use the
+# project environment instead of whatever system Python happens to be active.
+if [[ -n "${PYTHON_BIN:-}" ]]; then
+  PYTHON_CMD=( "$PYTHON_BIN" )
+elif command -v uv >/dev/null 2>&1; then
+  PYTHON_CMD=( uv run python )
+elif [[ -x "$REPO_ROOT/.venv/bin/python" ]]; then
+  PYTHON_CMD=( "$REPO_ROOT/.venv/bin/python" )
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_CMD=( python3 )
+else
+  PYTHON_CMD=( python )
+fi
+
+echo "[eval_openllm] python: ${PYTHON_CMD[*]}"
 
 # Forward every argument to the Python runner. We use `python -m` so the
 # `openllm` package import inside aggregate_results works regardless of CWD.
-exec "$PYTHON_BIN" -m openllm.run_openllm_eval "$@"
+exec "${PYTHON_CMD[@]}" -m openllm.run_openllm_eval "$@"

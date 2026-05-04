@@ -36,13 +36,32 @@ simpo=jackf857/llama-3-8b-base-simpo-8xh200 \
 our_method=W-61/llama-3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-s_star-0.4-20260425-111846"
 fi
 
-# Default eval flags. All flags after the script name override / extend these.
-DEFAULTS=(
-  --tensor_parallel_size 4
-  --batch_size auto
-  --seed 1234
-  --log_samples
-)
+# Default eval flags. Explicit caller flags remain authoritative.
+has_arg() {
+  local name="$1"
+  shift
+  local arg
+  for arg in "$@"; do
+    if [[ "$arg" == "$name" || "$arg" == "$name="* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+DEFAULTS=()
+if ! has_arg --tensor_parallel_size "$@" && ! has_arg --num_gpus "$@"; then
+  DEFAULTS+=( --tensor_parallel_size 4 )
+fi
+if ! has_arg --batch_size "$@"; then
+  DEFAULTS+=( --batch_size auto )
+fi
+if ! has_arg --seed "$@"; then
+  DEFAULTS+=( --seed 1234 )
+fi
+if ! has_arg --log_samples "$@"; then
+  DEFAULTS+=( --log_samples )
+fi
 
 CHECKPOINTS="$CHECKPOINTS" OUTPUT_ROOT="$OUTPUT_ROOT" \
   bash scripts/eval_all_checkpoints.sh "${DEFAULTS[@]}" "$@"

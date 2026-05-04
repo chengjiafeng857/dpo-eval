@@ -20,17 +20,17 @@ shot configuration.
 
 ## Install
 
-`lm-eval` is intentionally **not** pinned in `pyproject.toml` — it is a heavy
-dependency that the other benchmark wrappers in this repo do not need.
-Install it into the same environment you use for `vllm`/`transformers`:
+`lm-eval` is declared in `pyproject.toml`, and `vllm` is included on Linux.
+Sync the project environment on the machine that will run evaluation:
 
 ```bash
-# HF backend
-pip install "lm-eval==0.4.5"
-
-# vLLM backend (additionally pulls vllm extras)
-pip install "lm-eval[vllm]==0.4.5"
+uv sync
 ```
+
+The shell wrappers prefer `uv run python` automatically when `uv` is available,
+so direct calls such as `bash scripts/eval_openllm_qwen_family.sh` use the
+project environment instead of the system Python. You can still override the
+interpreter explicitly with `PYTHON_BIN=/path/to/python`.
 
 ## Usage
 
@@ -166,6 +166,6 @@ checkpoints.
   falls back to `acc` on any `truthfulqa*` entry — both shapes are handled.
 - **MMLU group vs subjects.** If only the 57 subject leaves are present, the
   aggregator averages them and reports that as `mmlu_acc`.
-- **`lm_eval: command not found`.** The runner falls back to
-  `python -m lm_eval`. If that also fails, install `lm-eval` per the section
-  above.
+- **`No module named lm_eval`.** Run `uv sync` on the evaluation machine, or set
+  `PYTHON_BIN` to an environment where `lm-eval` is installed. The shell wrapper
+  automatically prefers `uv run python` when `uv` is available.

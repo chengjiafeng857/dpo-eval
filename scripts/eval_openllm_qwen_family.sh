@@ -34,12 +34,31 @@ simpo=jackf857/qwen3-8b-base-simpo-ultrafeedback-4xH200-batch-128 \
 our_method=W-61/qwen3-8b-base-new-dpo-ultrafeedback-4xh200-batch-128-q_t-0.43-s_star-0.4-20260429-230725"
 fi
 
-DEFAULTS=(
-  --tensor_parallel_size 4
-  --batch_size auto
-  --seed 1234
-  --log_samples
-)
+has_arg() {
+  local name="$1"
+  shift
+  local arg
+  for arg in "$@"; do
+    if [[ "$arg" == "$name" || "$arg" == "$name="* ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+DEFAULTS=()
+if ! has_arg --tensor_parallel_size "$@" && ! has_arg --num_gpus "$@"; then
+  DEFAULTS+=( --tensor_parallel_size 4 )
+fi
+if ! has_arg --batch_size "$@"; then
+  DEFAULTS+=( --batch_size auto )
+fi
+if ! has_arg --seed "$@"; then
+  DEFAULTS+=( --seed 1234 )
+fi
+if ! has_arg --log_samples "$@"; then
+  DEFAULTS+=( --log_samples )
+fi
 
 CHECKPOINTS="$CHECKPOINTS" OUTPUT_ROOT="$OUTPUT_ROOT" \
   bash scripts/eval_all_checkpoints.sh "${DEFAULTS[@]}" "$@"
