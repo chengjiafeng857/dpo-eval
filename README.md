@@ -395,11 +395,13 @@ uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
 - Python environment managed with `uv`.
 - Project dependencies installed.
 - Install dependencies with `uv sync`.
+- For Open LLM Leaderboard runs, install the dedicated runtime group with
+  `uv sync --group openllm`.
 - Access to the target model in `policy_name` or
   `alpacaeval.model_name_or_path`.
 - Access to the AlpacaEval dataset from Hugging Face.
-- The repo now declares `vllm` in both the main dependency set and the `eval`
-  dependency group for Linux environments.
+- The Open LLM Leaderboard wrapper uses the `openllm` dependency group, which
+  pins the tested `lm-eval`/`vllm`/Torch runtime for Linux environments.
 - The default annotator config is OpenAI-backed, so `alpacaeval-eval`
   typically needs `OPENAI_API_KEY`.
 - HH generation requires access to the Anthropic HH dataset on Hugging Face.

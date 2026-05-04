@@ -20,17 +20,19 @@ shot configuration.
 
 ## Install
 
-`lm-eval` is declared in `pyproject.toml`, and `vllm` is included on Linux.
-Sync the project environment on the machine that will run evaluation:
+`lm-eval`, `vllm`, and the OpenLLM-compatible Torch pin live in the
+`openllm` uv dependency group. Sync that group on the machine that will run
+evaluation:
 
 ```bash
-uv sync
+uv sync --group openllm
 ```
 
-The shell wrappers prefer `uv run python` automatically when `uv` is available,
-so direct calls such as `bash scripts/eval_openllm_qwen_family.sh` use the
-project environment instead of the system Python. You can still override the
-interpreter explicitly with `PYTHON_BIN=/path/to/python`.
+The shell wrappers prefer `uv run --group openllm python` automatically when
+`uv` is available, so direct calls such as
+`bash scripts/eval_openllm_qwen_family.sh` use the OpenLLM project environment
+instead of the system Python. You can still override the interpreter explicitly
+with `PYTHON_BIN=/path/to/python`.
 
 ## Usage
 
@@ -166,6 +168,7 @@ checkpoints.
   falls back to `acc` on any `truthfulqa*` entry — both shapes are handled.
 - **MMLU group vs subjects.** If only the 57 subject leaves are present, the
   aggregator averages them and reports that as `mmlu_acc`.
-- **`No module named lm_eval`.** Run `uv sync` on the evaluation machine, or set
-  `PYTHON_BIN` to an environment where `lm-eval` is installed. The shell wrapper
-  automatically prefers `uv run python` when `uv` is available.
+- **`No module named lm_eval`.** Run `uv sync --group openllm` on the evaluation
+  machine, or set `PYTHON_BIN` to an environment where `lm-eval` is installed.
+  The shell wrapper automatically prefers `uv run --group openllm python` when
+  `uv` is available.

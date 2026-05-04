@@ -12,7 +12,6 @@ dependencies = [
     "fschat>=0.2.36",
     "huggingface-hub>=0.34.0",
     "llm-blender @ git+https://github.com/yuchenlin/LLM-Blender.git",
-    "lm-eval>=0.4.4",
     "openai>=2.0.0",
     "pandas<3",
     "pyyaml>=6.0.3",
@@ -20,7 +19,13 @@ dependencies = [
     "torch>=2.0.0",
     "tqdm>=4.67.1",
     "transformers==4.57.3",
-    "vllm>=0.16.0; platform_system == 'Linux'",
+]
+
+[dependency-groups]
+openllm = [
+    "lm-eval==0.4.5",
+    "torch==2.7.1; platform_system == 'Linux'",
+    "vllm==0.10.1.1; platform_system == 'Linux'",
 ]
 
 [project.scripts]

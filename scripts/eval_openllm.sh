@@ -63,12 +63,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # Allow the caller to override which Python is used. When not overridden,
-# prefer `uv run python` so direct `bash scripts/...` invocations still use the
-# project environment instead of whatever system Python happens to be active.
+# prefer `uv run --group openllm python` so direct `bash scripts/...`
+# invocations still use the OpenLLM project environment instead of whatever
+# system Python happens to be active.
 if [[ -n "${PYTHON_BIN:-}" ]]; then
   PYTHON_CMD=( "$PYTHON_BIN" )
 elif command -v uv >/dev/null 2>&1; then
-  PYTHON_CMD=( uv run python )
+  PYTHON_CMD=( uv run --group openllm python )
 elif [[ -x "$REPO_ROOT/.venv/bin/python" ]]; then
   PYTHON_CMD=( "$REPO_ROOT/.venv/bin/python" )
 elif command -v python3 >/dev/null 2>&1; then
