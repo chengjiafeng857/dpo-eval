@@ -64,6 +64,7 @@ cd "$REPO_ROOT"
 
 export RAY_USE_MULTIPROCESSING_CPU_COUNT="${RAY_USE_MULTIPROCESSING_CPU_COUNT:-1}"
 export RAY_DISABLE_DOCKER_CPU_WARNING="${RAY_DISABLE_DOCKER_CPU_WARNING:-1}"
+export RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO="${RAY_ACCEL_ENV_VAR_OVERRIDE_ON_ZERO:-0}"
 
 # Allow the caller to override which Python is used. When not overridden,
 # prefer `uv run --group openllm python` so direct `bash scripts/...`
