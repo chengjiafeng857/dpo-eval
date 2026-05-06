@@ -114,6 +114,28 @@ def _build_runtime_model_config(config: Dict[str, Any]) -> Path:
     return config_path
 
 
+def _add_cache_control_args(command: list[str], alpacaeval_cfg: Dict[str, Any]) -> None:
+    """Default to fresh annotations instead of AlpacaEval's package cache."""
+    use_annotation_cache = bool(alpacaeval_cfg.get("use_annotation_cache", False))
+    if not use_annotation_cache:
+        command.extend(
+            [
+                "--caching_path=None",
+                "--is_avoid_reannotations=False",
+            ]
+        )
+
+    force_rejudge = bool(alpacaeval_cfg.get("force_rejudge", True))
+    if force_rejudge:
+        command.extend(
+            [
+                "--precomputed_leaderboard=None",
+                "--is_overwrite_leaderboard=True",
+                "--is_cache_leaderboard=False",
+            ]
+        )
+
+
 def _resolve_model_outputs_path(
     config: Dict[str, Any],
     model_outputs_path: str | None,
@@ -185,6 +207,8 @@ def run_alpacaeval_evaluation(
             command.extend(
                 ["--reference_outputs", str(resolve_path(config, reference_outputs))]
             )
+
+    _add_cache_control_args(command, alpacaeval_cfg)
 
     print(f"[AlpacaEval] alpaca_eval_version={version}")
     print(f"[AlpacaEval] command={' '.join(shlex.quote(part) for part in command)}")
