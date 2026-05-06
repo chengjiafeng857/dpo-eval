@@ -62,6 +62,9 @@ fi
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
+export RAY_USE_MULTIPROCESSING_CPU_COUNT="${RAY_USE_MULTIPROCESSING_CPU_COUNT:-1}"
+export RAY_DISABLE_DOCKER_CPU_WARNING="${RAY_DISABLE_DOCKER_CPU_WARNING:-1}"
+
 # Allow the caller to override which Python is used. When not overridden,
 # prefer `uv run --group openllm python` so direct `bash scripts/...`
 # invocations still use the OpenLLM project environment instead of whatever
