@@ -57,6 +57,13 @@ Install dependencies first:
 uv sync
 ```
 
+For AlpacaEval configs that use the `vllm` backend, install the dedicated
+runtime group:
+
+```bash
+uv sync --group alpacaeval
+```
+
 For judge-backed stages, export your OpenAI key:
 
 ```bash
@@ -68,14 +75,14 @@ export OPENAI_API_KEY=...
 Run local generation first, then score the saved outputs with `alpaca-eval`:
 
 ```bash
-uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+uv run --group alpacaeval alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
 uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
 ```
 
 Batch mode runs the same two stages for every model in the batch config:
 
 ```bash
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
+uv run --group alpacaeval alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
 ```
 
 ### HH GPT-judge full pipeline
@@ -117,7 +124,7 @@ The normal AlpacaEval workflow is two explicit stages:
 The simplest end-to-end run is:
 
 ```bash
-uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+uv run --group alpacaeval alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
 uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
 ```
 
@@ -126,7 +133,7 @@ uv run alpacaeval-eval --config alpacaeval/config_alpacaeval.yaml
 Inference only:
 
 ```bash
-uv run alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
+uv run --group alpacaeval alpacaeval-infer --config alpacaeval/config_alpacaeval.yaml
 ```
 
 Evaluation only, using the outputs written by the earlier inference step:
@@ -154,13 +161,13 @@ uv run alpacaeval-eval \
 Batch mode, full pipeline:
 
 ```bash
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
+uv run --group alpacaeval alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml
 ```
 
 Batch mode, separate stages:
 
 ```bash
-uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --inference-only
+uv run --group alpacaeval alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --inference-only
 uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --eval-only
 uv run alpacaeval-batch --config alpacaeval/config_alpacaeval_batch.yaml --use-model-configs
 ```
@@ -395,13 +402,17 @@ uv run mtbench-batch --config mtbench/config_mtbench_batch.yaml
 - Python environment managed with `uv`.
 - Project dependencies installed.
 - Install dependencies with `uv sync`.
+- For AlpacaEval `vllm` backend runs, install the dedicated runtime group with
+  `uv sync --group alpacaeval` and launch inference with
+  `uv run --group alpacaeval alpacaeval-infer ...`.
 - For Open LLM Leaderboard runs, install the dedicated runtime group with
   `uv sync --group openllm`.
 - Access to the target model in `policy_name` or
   `alpacaeval.model_name_or_path`.
 - Access to the AlpacaEval dataset from Hugging Face.
-- The Open LLM Leaderboard wrapper uses the `openllm` dependency group, which
-  pins the tested `lm-eval`/`vllm`/Torch runtime for Linux environments.
+- The AlpacaEval runtime group installs the vLLM backend for Linux
+  environments. The Open LLM Leaderboard runtime group keeps its separate
+  tested `lm-eval`/`vllm`/Torch pin set.
 - The default annotator config is OpenAI-backed, so `alpacaeval-eval`
   typically needs `OPENAI_API_KEY`.
 - HH generation requires access to the Anthropic HH dataset on Hugging Face.

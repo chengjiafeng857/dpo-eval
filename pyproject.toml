@@ -22,6 +22,9 @@ dependencies = [
 ]
 
 [dependency-groups]
+alpacaeval = [
+    "vllm>=0.16.0; platform_system == 'Linux'",
+]
 openllm = [
     "lm-eval==0.4.5",
     "torch==2.7.1; platform_system == 'Linux'",
@@ -53,4 +56,10 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.uv]
+conflicts = [
+    [
+        { group = "alpacaeval" },
+        { group = "openllm" },
+    ],
+]
 package = true
